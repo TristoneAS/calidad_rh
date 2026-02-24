@@ -65,6 +65,14 @@ const App = ({ children }) => {
   const [expanded, setExpanded] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+
+  // Permisos: "Admin" | "Calidad" | "RH" (extraído de data.groups[0].cn o role)
+  const isAdmin = userRole === "Admin";
+  const isCalidad = userRole === "Calidad";
+  const isRH = userRole === "RH";
+  const showCalidad = isAdmin || isCalidad;
+  const showRH = isAdmin || isRH;
 
   const handleToggleSidebar = () => setOpen(!open);
   const handleChange = (panel) => (event, isExpanded) => {
@@ -88,6 +96,42 @@ const App = ({ children }) => {
       setOpen(false);
     }
   }, [isMobile, isSmallScreen]);
+
+  // Leer permisos desde localStorage: data.groups[0].cn (última palabra) o role
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const storedUser = window.localStorage.getItem("user");
+      if (!storedUser) {
+        setUserRole(null);
+        return;
+      }
+      const data = JSON.parse(storedUser);
+      const validRoles = ["Admin", "Calidad", "RH"];
+
+      // 1) Intentar desde data.data.groups[0].cn (última palabra)
+      const cn = data?.data?.groups?.[0]?.cn;
+      if (cn && typeof cn === "string") {
+        const parts = cn.trim().split(/[\s._-]+/).filter(Boolean);
+        const lastWord = parts.length ? parts[parts.length - 1] : "";
+        if (validRoles.includes(lastWord)) {
+          setUserRole(lastWord);
+          return;
+        }
+      }
+
+      // 2) Fallback: lider_calidad → Calidad
+      if (data?.role === "lider_calidad") {
+        setUserRole("Calidad");
+        return;
+      }
+
+      setUserRole(null);
+    } catch (err) {
+      console.error("Error leyendo permisos desde localStorage:", err);
+      setUserRole(null);
+    }
+  }, []);
 
   const handleLogout = () => {
     try {
@@ -140,7 +184,7 @@ const App = ({ children }) => {
             } catch (err) {
               console.error(
                 "Error limpiando localStorage tras expirar sesión:",
-                err
+                err,
               );
             }
           }
@@ -333,7 +377,7 @@ const App = ({ children }) => {
             borderBottom: `2px solid ${alpha(colors.primary.main, 0.1)}`,
             background: `linear-gradient(135deg, ${alpha(
               colors.primary.main,
-              0.05
+              0.05,
             )} 0%, ${alpha(colors.secondary.main, 0.05)} 100%)`,
           }}
         >
@@ -359,6 +403,7 @@ const App = ({ children }) => {
         </Box>
 
         {/* 🔹 DEPARTAMENTO: CALIDAD */}
+        {showCalidad && (
         <Box sx={{ px: isSmallScreen ? 1 : 2, pt: isSmallScreen ? 1 : 2 }}>
           <Typography
             variant="subtitle2"
@@ -489,87 +534,92 @@ const App = ({ children }) => {
             </AccordionDetails>
           </Accordion>
 
-          {/* Calidad - Líderes de Calidad */}
-          <Accordion
-            expanded={expanded === "Calidad-Lideres"}
-            onChange={handleChange("Calidad-Lideres")}
-            sx={{
-              boxShadow: "none",
-              "&:before": { display: "none" },
-              border: `1px solid ${alpha(colors.primary.main, 0.1)}`,
-              borderRadius: 2,
-              mb: 1,
-              "&.Mui-expanded": {
-                bgcolor: alpha(colors.primary.main, 0.03),
-              },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMoreIcon sx={{ color: colors.primary.main }} />
-              }
+          {/* Calidad - Líderes de Calidad (solo Admin) */}
+          {isAdmin && (
+            <Accordion
+              expanded={expanded === "Calidad-Lideres"}
+              onChange={handleChange("Calidad-Lideres")}
               sx={{
-                "&:hover": {
-                  bgcolor: alpha(colors.primary.main, 0.05),
-                },
+                boxShadow: "none",
+                "&:before": { display: "none" },
+                border: `1px solid ${alpha(colors.primary.main, 0.1)}`,
                 borderRadius: 2,
+                mb: 1,
+                "&.Mui-expanded": {
+                  bgcolor: alpha(colors.primary.main, 0.03),
+                },
               }}
             >
-              <PeopleIcon
+              <AccordionSummary
+                expandIcon={
+                  <ExpandMoreIcon sx={{ color: colors.primary.main }} />
+                }
                 sx={{
-                  mr: isSmallScreen ? 1 : 1.5,
-                  color: colors.primary.main,
-                  fontSize: isSmallScreen ? 18 : 22,
-                }}
-              />
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
+                  "&:hover": {
+                    bgcolor: alpha(colors.primary.main, 0.05),
+                  },
+                  borderRadius: 2,
                 }}
               >
-                Líderes de Calidad
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0, pb: 1 }}>
-              <List disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/calidad/lideres_calidad");
-                    handleMenuItemClick();
-                  }}
+                <PeopleIcon
                   sx={{
-                    borderRadius: 1.5,
-                    "&:hover": {
-                      bgcolor: alpha(colors.primary.main, 0.08),
-                    },
+                    mr: isSmallScreen ? 1 : 1.5,
+                    color: colors.primary.main,
+                    fontSize: isSmallScreen ? 18 : 22,
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
                   }}
                 >
-                  <PersonAddIcon
+                  Líderes de Calidad
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                <List disablePadding>
+                  <ListItemButton
+                    onClick={() => {
+                      router.push("/dashboard/calidad/lideres_calidad");
+                      handleMenuItemClick();
+                    }}
                     sx={{
-                      mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
-                      color: colors.primary.dark,
+                      borderRadius: 1.5,
+                      "&:hover": {
+                        bgcolor: alpha(colors.primary.main, 0.08),
+                      },
                     }}
-                  />
-                  <ListItemText
-                    primary="Administrar Líderes"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </ListItemButton>
-              </List>
-            </AccordionDetails>
-          </Accordion>
+                  >
+                    <PersonAddIcon
+                      sx={{
+                        mr: isSmallScreen ? 1 : 1.5,
+                        fontSize: isSmallScreen ? 16 : 20,
+                        color: colors.primary.dark,
+                      }}
+                    />
+                    <ListItemText
+                      primary="Administrar Líderes"
+                      primaryTypographyProps={{
+                        fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                        fontWeight: 500,
+                      }}
+                    />
+                  </ListItemButton>
+                </List>
+              </AccordionDetails>
+            </Accordion>
+          )}
         </Box>
+        )}
 
-        <Divider
-          sx={{ my: isSmallScreen ? 1 : 2, mx: isSmallScreen ? 1 : 2 }}
-        />
+        {showRH && (
+          <>
+            <Divider
+              sx={{ my: isSmallScreen ? 1 : 2, mx: isSmallScreen ? 1 : 2 }}
+            />
 
-        {/* 🔹 DEPARTAMENTO: RH */}
+            {/* 🔹 DEPARTAMENTO: RH */}
         <Box sx={{ px: isSmallScreen ? 1 : 2 }}>
           <Typography
             variant="subtitle2"
@@ -862,6 +912,9 @@ const App = ({ children }) => {
             </AccordionDetails>
           </Accordion>
         </Box>
+          </>
+        )}
+
         <Divider
           sx={{ my: isSmallScreen ? 1 : 2, mx: isSmallScreen ? 1 : 2 }}
         />
@@ -1061,7 +1114,7 @@ const App = ({ children }) => {
                 <ListItemButton
                   onClick={() => {
                     router.push(
-                      "/dashboard/consultas/consultar_matriz_habilidades"
+                      "/dashboard/consultas/consultar_matriz_habilidades",
                     );
                     handleMenuItemClick();
                   }}

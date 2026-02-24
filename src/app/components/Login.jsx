@@ -54,19 +54,16 @@ function Login() {
       // 1) Intentar login como líder de calidad: usuario y contraseña iguales a emp_id en tabla lideres_calidad
       try {
         const liderRes = await fetch(
-          `/api/lideres_calidad?emp_id=${encodeURIComponent(username)}`
+          `/api/lideres_calidad?emp_id=${encodeURIComponent(username)}`,
         );
         if (liderRes.ok) {
           const liderJson = await liderRes.json();
-          if (
-            liderJson?.success &&
-            liderJson.data &&
-            password === username
-          ) {
+          if (liderJson?.success && liderJson.data && password === username) {
             // Login de líder de calidad exitoso
             const liderData = {
               ...liderJson.data,
               role: "lider_calidad",
+              groups: [{ cn: "Calidad" }],
             };
             setSnackbarMessage("Iniciando Sesión (Líder de Calidad)");
             setSnackbarSeverity("success");
@@ -96,7 +93,7 @@ function Login() {
 
       // 2) Login normal contra servidor de autenticación externo
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_SERVER_URL}/MATERIAL_FLOW_AD/AUTHENTICATE`,
+        `${process.env.NEXT_PUBLIC_AUTH_SERVER_URL}/CALIDAD_RH/AUTHENTICATE`,
         {
           method: "POST",
           headers: {
@@ -106,7 +103,7 @@ function Login() {
             username,
             password,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -133,7 +130,7 @@ function Login() {
       } else {
         setSnackbarMessage(
           "Error en autenticación: " +
-            (data.message || "Credenciales inválidas")
+            (data.message || "Credenciales inválidas"),
         );
         setLoading(false);
         setSnackbarSeverity("error");
@@ -141,7 +138,7 @@ function Login() {
       }
     } catch (error) {
       setSnackbarMessage(
-        "Error al conectar con el servidor, contacte a soporte"
+        "Error al conectar con el servidor, contacte a soporte",
       );
       setSnackbarSeverity("error");
       setOpenSnackbar(true);
