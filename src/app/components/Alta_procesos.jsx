@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   TextField,
-  Button,
   Typography,
   Alert,
   Dialog,
@@ -23,6 +22,7 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
@@ -437,7 +437,7 @@ function Alta_procesos() {
               </FormControl>
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                <Button
+                <SafeButton
                   type="submit"
                   variant="contained"
                   startIcon={
@@ -462,7 +462,7 @@ function Alta_procesos() {
                   }}
                 >
                   {loading ? "Guardando..." : "Guardar Proceso"}
-                </Button>
+                </SafeButton>
               </Box>
             </Box>
           </form>
@@ -569,13 +569,13 @@ function Alta_procesos() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button
+          <SafeButton
             onClick={() => setEditDialog({ open: false, proceso: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </Button>
-          <Button
+          </SafeButton>
+          <SafeButton
             onClick={handleUpdate}
             variant="contained"
             disabled={loading}
@@ -587,7 +587,7 @@ function Alta_procesos() {
             }}
           >
             {loading ? "Guardando..." : "Guardar Cambios"}
-          </Button>
+          </SafeButton>
         </DialogActions>
       </Dialog>
 
@@ -606,13 +606,13 @@ function Alta_procesos() {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button
+          <SafeButton
             onClick={() => setDeleteDialog({ open: false, id: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </Button>
-          <Button
+          </SafeButton>
+          <SafeButton
             onClick={handleDeleteConfirm}
             variant="contained"
             disabled={loading}
@@ -624,7 +624,7 @@ function Alta_procesos() {
             }}
           >
             {loading ? "Eliminando..." : "Eliminar"}
-          </Button>
+          </SafeButton>
         </DialogActions>
       </Dialog>
     </Box>

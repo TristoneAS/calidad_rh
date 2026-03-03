@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   TextField,
-  Button,
   Typography,
   Alert,
   CircularProgress,
@@ -20,6 +19,7 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import PeopleIcon from "@mui/icons-material/People";
 import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
@@ -362,7 +362,7 @@ function Lideres_calidad() {
               />
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                <Button
+                <SafeButton
                   type="submit"
                   variant="contained"
                   startIcon={
@@ -385,7 +385,7 @@ function Lideres_calidad() {
                   }}
                 >
                   {loading ? "Guardando..." : "Agregar Líder"}
-                </Button>
+                </SafeButton>
               </Box>
             </Box>
           </form>
@@ -480,13 +480,13 @@ function Lideres_calidad() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button
+          <SafeButton
             onClick={() => setEditDialog({ open: false, lider: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </Button>
-          <Button
+          </SafeButton>
+          <SafeButton
             onClick={handleUpdate}
             variant="contained"
             disabled={loading}
@@ -496,7 +496,7 @@ function Lideres_calidad() {
             }}
           >
             {loading ? "Guardando..." : "Guardar Cambios"}
-          </Button>
+          </SafeButton>
         </DialogActions>
       </Dialog>
     </Box>

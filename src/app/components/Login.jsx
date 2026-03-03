@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   Box,
   TextField,
-  Button,
   Typography,
   Container,
   Paper,
@@ -17,6 +16,7 @@ import {
 import { Visibility, VisibilityOff, Person, Lock } from "@mui/icons-material";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import SafeButton from "@/app/components/common/SafeButton";
 
 function Login() {
   const router = useRouter();
@@ -309,7 +309,7 @@ function Login() {
               }}
             />
 
-            <Button
+            <SafeButton
               type="submit"
               fullWidth
               variant="contained"
@@ -345,7 +345,7 @@ function Login() {
               ) : (
                 "Iniciar Sesión"
               )}
-            </Button>
+            </SafeButton>
           </Box>
 
           <Snackbar

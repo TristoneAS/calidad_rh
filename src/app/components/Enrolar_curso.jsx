@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   CardContent,
-  Button,
   Typography,
   Alert,
   ToggleButton,
@@ -24,6 +23,7 @@ import {
   TextField,
 } from "@mui/material";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import PersonIcon from "@mui/icons-material/Person";
 import SchoolIcon from "@mui/icons-material/School";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -494,7 +494,7 @@ function Enrolar_curso() {
                   }}
                   placeholder="Ingresa el ID del empleado"
                 />
-                <Button
+                <SafeButton
                   variant="contained"
                   onClick={buscarEmpleado}
                   disabled={loadingEmpleado}
@@ -512,7 +512,7 @@ function Enrolar_curso() {
                   }}
                 >
                   {loadingEmpleado ? "Buscando..." : "Buscar"}
-                </Button>
+                </SafeButton>
               </Box>
 
               {empleadoEncontrado && (
@@ -567,7 +567,7 @@ function Enrolar_curso() {
                         ))}
                       </Select>
                     </FormControl>
-                    <Button
+                    <SafeButton
                       variant="contained"
                       onClick={handleAgregarCurso}
                       sx={{
@@ -577,7 +577,7 @@ function Enrolar_curso() {
                       }}
                     >
                       Agregar
-                    </Button>
+                    </SafeButton>
                   </Box>
 
                   {cursosSeleccionados.length > 0 && (
@@ -649,7 +649,7 @@ function Enrolar_curso() {
                       }}
                       placeholder="Ingresa el ID del empleado"
                     />
-                    <Button
+                    <SafeButton
                       variant="contained"
                       onClick={buscarEmpleado}
                       disabled={loadingEmpleado}
@@ -667,7 +667,7 @@ function Enrolar_curso() {
                       }}
                     >
                       {loadingEmpleado ? "Buscando..." : "Buscar"}
-                    </Button>
+                    </SafeButton>
                   </Box>
 
                   {empleadoEncontrado && (
@@ -697,7 +697,7 @@ function Enrolar_curso() {
                           empleadoEncontrado.emp_nombre ||
                           "Sin nombre"}
                       </Typography>
-                      <Button
+                      <SafeButton
                         variant="contained"
                         onClick={handleAgregarEmpleado}
                         sx={{
@@ -707,7 +707,7 @@ function Enrolar_curso() {
                         }}
                       >
                         Agregar Empleado
-                      </Button>
+                      </SafeButton>
                     </Paper>
                   )}
 
@@ -749,7 +749,7 @@ function Enrolar_curso() {
 
           {/* Botón de guardar */}
           <Box display="flex" justifyContent="flex-end" mt={4}>
-            <Button
+            <SafeButton
               variant="contained"
               size="large"
               onClick={handleGuardar}
@@ -764,7 +764,7 @@ function Enrolar_curso() {
               }}
             >
               {loading ? "Guardando..." : "Guardar Enrolamientos"}
-            </Button>
+            </SafeButton>
           </Box>
         </CardContent>
       </Card>

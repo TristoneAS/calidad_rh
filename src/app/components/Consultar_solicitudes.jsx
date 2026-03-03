@@ -10,7 +10,6 @@ import {
   Tabs,
   Tab,
   alpha,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,6 +19,7 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import PendingIcon from "@mui/icons-material/Pending";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
@@ -536,7 +536,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
       sortable: false,
       renderCell: (params) => (
         <Tooltip title="Ver historial">
-          <Button
+          <SafeButton
             variant="outlined"
             size="small"
             startIcon={<HistoryIcon />}
@@ -548,7 +548,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
             }}
           >
             Ver
-          </Button>
+          </SafeButton>
         </Tooltip>
       ),
     },
@@ -570,7 +570,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           const disabled = esModoCalidad || esModoRhCert;
           return (
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Button
+              <SafeButton
                 variant="contained"
                 size="small"
                 color="success"
@@ -585,8 +585,8 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Entr. ok
-              </Button>
-              <Button
+              </SafeButton>
+              <SafeButton
                 variant="outlined"
                 size="small"
                 color="error"
@@ -601,7 +601,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Entr. no
-              </Button>
+              </SafeButton>
             </Box>
           );
         }
@@ -611,7 +611,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           const disabled = esModoRhEntr || esModoRhCert;
           return (
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Button
+              <SafeButton
                 variant="contained"
                 size="small"
                 color="primary"
@@ -626,8 +626,8 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Aud. ok
-              </Button>
-              <Button
+              </SafeButton>
+              <SafeButton
                 variant="outlined"
                 size="small"
                 color="error"
@@ -642,7 +642,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Aud. no
-              </Button>
+              </SafeButton>
             </Box>
           );
         }
@@ -651,7 +651,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           // Paso RH: asignar certificación (crea enrolamiento y cierra flujo)
           const disabled = esModoCalidad || esModoRhEntr;
           return (
-            <Button
+            <SafeButton
               variant="contained"
               size="small"
               color="success"
@@ -666,7 +666,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
               }
             >
               Asignar cert.
-            </Button>
+            </SafeButton>
           );
         }
 
@@ -959,16 +959,16 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={cerrarDialogComentario} color="inherit">
+          <SafeButton onClick={cerrarDialogComentario} color="inherit">
             Cancelar
-          </Button>
-          <Button
+          </SafeButton>
+          <SafeButton
             onClick={confirmarComentario}
             variant="contained"
             color="primary"
           >
             Guardar y continuar
-          </Button>
+          </SafeButton>
         </DialogActions>
       </Dialog>
 
@@ -1036,9 +1036,9 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={cerrarHistorial} variant="contained">
+          <SafeButton onClick={cerrarHistorial} variant="contained">
             Cerrar
-          </Button>
+          </SafeButton>
         </DialogActions>
       </Dialog>
     </Box>

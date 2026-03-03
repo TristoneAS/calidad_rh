@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   CardContent,
-  Button,
   Typography,
   Alert,
   ToggleButton,
@@ -24,6 +23,7 @@ import {
   TextField,
 } from "@mui/material";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import PersonIcon from "@mui/icons-material/Person";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -56,10 +56,45 @@ function Enrolar_proceso() {
   const [loadingEmpleado, setLoadingEmpleado] = useState(false);
   const [loadingProcesos, setLoadingProcesos] = useState(true);
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
+  const [enroladoPor, setEnroladoPor] = useState(""); // emp_nombre del usuario de sesión
 
-  // Cargar procesos al montar el componente
+  // Cargar procesos y usuario de sesión al montar
   useEffect(() => {
     fetchProcesos();
+  }, []);
+
+  // Obtener emp_id y emp_nombre del usuario de sesión actual
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fetchUsuarioSesion = async () => {
+      try {
+        const storedUser = window.localStorage.getItem("user");
+        const usuario = window.localStorage.getItem("usuario");
+        let empId = usuario;
+        if (storedUser) {
+          try {
+            const data = JSON.parse(storedUser);
+            empId = data?.emp_id || data?.data?.users?.[0]?.employeeID || empId;
+          } catch (_) {}
+        }
+        if (!empId) {
+          setEnroladoPor("Sistema");
+          return;
+        }
+        const res = await axios.get(`/api/empleados?emp_id=${encodeURIComponent(empId)}`);
+        if (res.data.success && res.data.data) {
+          const emp = res.data.data;
+          const nombre = emp.emp_nombre || emp.NOMBRE || emp.nombre || String(empId);
+          setEnroladoPor(nombre);
+        } else {
+          setEnroladoPor(String(empId));
+        }
+      } catch (_) {
+        const usuario = window.localStorage.getItem("usuario");
+        setEnroladoPor(usuario || "Sistema");
+      }
+    };
+    fetchUsuarioSesion();
   }, []);
 
   const fetchProcesos = async () => {
@@ -295,14 +330,25 @@ function Enrolar_proceso() {
         return;
       }
 
-      enrolamientos = procesosSeleccionados.map((proceso) => ({
-        emp_id: empId,
-        emp_nombre: empNombre,
-        id_proceso: proceso.id,
-        nombre_proceso: proceso.nombre,
-        descripcion_proceso: proceso.descripcion || "",
-        enrolado_por: "Alex",
-      }));
+      enrolamientos = procesosSeleccionados.map((proceso) => {
+        const esCertificable =
+          proceso.certificable &&
+          proceso.certificable.toString().toLowerCase() === "si";
+        const vencimiento = esCertificable ? new Date() : null;
+        if (vencimiento) vencimiento.setMonth(vencimiento.getMonth() + 6);
+        return {
+          emp_id: empId,
+          emp_nombre: empNombre,
+          id_proceso: proceso.id,
+          nombre_proceso: proceso.nombre,
+          descripcion_proceso: proceso.descripcion || "",
+          enrolado_por: enroladoPor || "Sistema",
+          es_certificacion: esCertificable,
+          fecha_vencimiento: esCertificable
+            ? vencimiento.toISOString().split("T")[0]
+            : null,
+        };
+      });
     } else {
       // Modo: Proceso -> Empleados
       if (!procesoSeleccionado) {
@@ -348,13 +394,23 @@ function Enrolar_proceso() {
         return;
       }
 
+      const esCertificable =
+        proceso.certificable &&
+        proceso.certificable.toString().toLowerCase() === "si";
+      const vencimiento = esCertificable ? new Date() : null;
+      if (vencimiento) vencimiento.setMonth(vencimiento.getMonth() + 6);
+
       enrolamientos = empleadosSeleccionados.map((emp) => ({
         emp_id: emp.NUM_EMPLEADO || emp.num_empleado || emp.emp_id || emp.id,
         emp_nombre: emp.NOMBRE || emp.nombre || emp.emp_nombre || "Sin nombre",
         id_proceso: proceso.id,
         nombre_proceso: proceso.nombre,
         descripcion_proceso: proceso.descripcion || "",
-        enrolado_por: "Alex",
+        enrolado_por: enroladoPor || "Sistema",
+        es_certificacion: esCertificable,
+        fecha_vencimiento: esCertificable
+          ? vencimiento.toISOString().split("T")[0]
+          : null,
       }));
     }
 
@@ -416,13 +472,20 @@ function Enrolar_proceso() {
         }}
       >
         <CardContent sx={{ p: 3 }}>
-          <Box display="flex" alignItems="center" mb={3}>
-            <RequestQuoteIcon
-              sx={{ fontSize: 32, color: colors.primary.main, mr: 2 }}
-            />
-            <Typography variant="h4" component="h1" fontWeight="bold">
-              Enrolar Proceso
-            </Typography>
+          <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2} mb={3}>
+            <Box display="flex" alignItems="center">
+              <RequestQuoteIcon
+                sx={{ fontSize: 32, color: colors.primary.main, mr: 2 }}
+              />
+              <Typography variant="h4" component="h1" fontWeight="bold">
+                Enrolar Proceso
+              </Typography>
+            </Box>
+            {enroladoPor && (
+              <Typography variant="body2" color="text.secondary">
+                Enrolando como: <strong>{enroladoPor}</strong>
+              </Typography>
+            )}
           </Box>
 
           {alert.show && (
@@ -476,7 +539,7 @@ function Enrolar_proceso() {
                   }}
                   placeholder="Ingresa el ID del empleado"
                 />
-                <Button
+                <SafeButton
                   variant="contained"
                   onClick={buscarEmpleado}
                   disabled={loadingEmpleado}
@@ -494,7 +557,7 @@ function Enrolar_proceso() {
                   }}
                 >
                   {loadingEmpleado ? "Buscando..." : "Buscar"}
-                </Button>
+                </SafeButton>
               </Box>
 
               {empleadoEncontrado && (
@@ -557,7 +620,7 @@ function Enrolar_proceso() {
                         })}
                       </Select>
                     </FormControl>
-                    <Button
+                    <SafeButton
                       variant="contained"
                       onClick={handleAgregarProceso}
                       sx={{
@@ -567,7 +630,7 @@ function Enrolar_proceso() {
                       }}
                     >
                       Agregar
-                    </Button>
+                    </SafeButton>
                   </Box>
 
                   {procesosSeleccionados.length > 0 && (
@@ -648,7 +711,7 @@ function Enrolar_proceso() {
                       }}
                       placeholder="Ingresa el ID del empleado"
                     />
-                    <Button
+                    <SafeButton
                       variant="contained"
                       onClick={buscarEmpleado}
                       disabled={loadingEmpleado}
@@ -666,7 +729,7 @@ function Enrolar_proceso() {
                       }}
                     >
                       {loadingEmpleado ? "Buscando..." : "Buscar"}
-                    </Button>
+                    </SafeButton>
                   </Box>
 
                   {empleadoEncontrado && (
@@ -695,7 +758,7 @@ function Enrolar_proceso() {
                           empleadoEncontrado.nombre ||
                           "Sin nombre"}
                       </Typography>
-                      <Button
+                      <SafeButton
                         variant="contained"
                         onClick={handleAgregarEmpleado}
                         sx={{
@@ -705,7 +768,7 @@ function Enrolar_proceso() {
                         }}
                       >
                         Agregar Empleado
-                      </Button>
+                      </SafeButton>
                     </Paper>
                   )}
 
@@ -747,7 +810,7 @@ function Enrolar_proceso() {
 
           {/* Botón de guardar */}
           <Box display="flex" justifyContent="flex-end" mt={4}>
-            <Button
+            <SafeButton
               variant="contained"
               size="large"
               onClick={handleGuardar}
@@ -762,7 +825,7 @@ function Enrolar_proceso() {
               }}
             >
               {loading ? "Guardando..." : "Guardar Enrolamientos"}
-            </Button>
+            </SafeButton>
           </Box>
         </CardContent>
       </Card>

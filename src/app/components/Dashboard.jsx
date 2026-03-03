@@ -10,7 +10,6 @@ import {
   useTheme,
   alpha,
   Alert,
-  Button,
 } from "@mui/material";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import SchoolIcon from "@mui/icons-material/School";
@@ -24,6 +23,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import SafeButton from "@/app/components/common/SafeButton";
 
 const colors = {
   primary: {
@@ -79,7 +79,7 @@ const statusDefinitions = [
   {
     status: "Pendiente",
     meaning:
-      "Solicitud creada por Supervisor. Esperando que RH imparta el entrenamiento.",
+      "Solicitud creada por Supervisor. Esperando que RH imparta el examen de entrenamiento.",
   },
   {
     status: "Entrenamiento aprobado",
@@ -133,7 +133,7 @@ function Dashboard() {
           icon={<WarningAmberIcon />}
           sx={{ mb: 3 }}
           action={
-            <Button
+            <SafeButton
               color="inherit"
               size="small"
               onClick={() =>
@@ -141,7 +141,7 @@ function Dashboard() {
               }
             >
               Ver detalle
-            </Button>
+            </SafeButton>
           }
         >
           {porVencerCount} certificación(es) por vencer en los próximos 30 días

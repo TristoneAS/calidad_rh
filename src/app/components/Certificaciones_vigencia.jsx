@@ -10,7 +10,6 @@ import {
   CircularProgress,
   Tabs,
   Tab,
-  Button,
   alpha,
   Table,
   TableBody,
@@ -27,6 +26,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import EventBusyIcon from "@mui/icons-material/EventBusy";
 import HistoryIcon from "@mui/icons-material/History";
@@ -222,14 +222,14 @@ function Certificaciones_vigencia() {
             <Typography variant="h4" fontWeight="bold">
               Certificaciones - Vigencia y Renovación
             </Typography>
-            <Button
+            <SafeButton
               startIcon={<RefreshIcon />}
               onClick={fetchDatos}
               size="small"
               sx={{ ml: "auto" }}
             >
               Actualizar
-            </Button>
+            </SafeButton>
           </Box>
 
           {alert.show && (
@@ -242,24 +242,34 @@ function Certificaciones_vigencia() {
             Las certificaciones asignadas por RH caducan a los 6 meses. Aquí se listan las que están por vencer y las ya vencidas para renovación.
           </Typography>
 
+          {(() => {
+            const porVencerVisibles = porVencer.filter(
+              (c) => !tieneSolicitudPendiente(c.emp_id ?? c.empId, c.id_proceso ?? c.idProceso)
+            );
+            const vencidasVisibles = vencidas.filter(
+              (c) => !tieneSolicitudPendiente(c.emp_id ?? c.empId, c.id_proceso ?? c.idProceso)
+            );
+            return (
           <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
             <Tab
-              label={`Por vencer (${porVencer.length})`}
+              label={`Por vencer (${porVencerVisibles.length})`}
               icon={<WarningAmberIcon />}
               iconPosition="start"
             />
             <Tab
-              label={`Vencidas (${vencidas.length})`}
+              label={`Vencidas (${vencidasVisibles.length})`}
               icon={<EventBusyIcon />}
               iconPosition="start"
             />
           </Tabs>
+            );
+          })()}
 
           <TabPanel value={tabValue} index={0}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
               Certificaciones que vencen en los próximos 30 días
             </Typography>
-            {porVencer.length === 0 ? (
+            {porVencer.filter((c) => !tieneSolicitudPendiente(c.emp_id ?? c.empId, c.id_proceso ?? c.idProceso)).length === 0 ? (
               <Alert severity="success">
                 No hay certificaciones por vencer en los próximos 30 días.
               </Alert>
@@ -277,7 +287,7 @@ function Certificaciones_vigencia() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {porVencer.map((c) => {
+                    {porVencer.filter((c) => !tieneSolicitudPendiente(c.emp_id ?? c.empId, c.id_proceso ?? c.idProceso)).map((c) => {
                       const empId = c.emp_id ?? c.empId;
                       const idProceso = c.id_proceso ?? c.idProceso;
                       return (
@@ -294,13 +304,13 @@ function Certificaciones_vigencia() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Button
+                          <SafeButton
                             size="small"
                             startIcon={<HistoryIcon />}
                             onClick={() => abrirHistorial(empId, idProceso)}
                           >
                             Historial
-                          </Button>
+                          </SafeButton>
                         </TableCell>
                       </TableRow>
                     );})}
@@ -314,7 +324,7 @@ function Certificaciones_vigencia() {
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
               Certificaciones vencidas que pueden renovarse
             </Typography>
-            {vencidas.length === 0 ? (
+            {vencidas.filter((c) => !tieneSolicitudPendiente(c.emp_id ?? c.empId, c.id_proceso ?? c.idProceso)).length === 0 ? (
               <Alert severity="info">
                 No hay certificaciones vencidas.
               </Alert>
@@ -332,7 +342,7 @@ function Certificaciones_vigencia() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {vencidas.map((c) => {
+                    {vencidas.filter((c) => !tieneSolicitudPendiente(c.emp_id ?? c.empId, c.id_proceso ?? c.idProceso)).map((c) => {
                       const empId = c.emp_id ?? c.empId;
                       const idProceso = c.id_proceso ?? c.idProceso;
                       const tieneSolicitud = tieneSolicitudPendiente(empId, idProceso);
@@ -353,7 +363,7 @@ function Certificaciones_vigencia() {
                         <TableCell>
                           <Tooltip title={tieneSolicitud ? "Ya se mandó a renovación" : ""}>
                             <span>
-                              <Button
+                              <SafeButton
                                 size="small"
                                 variant="contained"
                                 startIcon={<AddCircleOutlineIcon />}
@@ -362,16 +372,16 @@ function Certificaciones_vigencia() {
                                 sx={{ mr: 1 }}
                               >
                                 Renovar
-                              </Button>
+                              </SafeButton>
                             </span>
                           </Tooltip>
-                          <Button
+                          <SafeButton
                             size="small"
                             startIcon={<HistoryIcon />}
                             onClick={() => abrirHistorial(empId, idProceso)}
                           >
                             Historial
-                          </Button>
+                          </SafeButton>
                         </TableCell>
                       </TableRow>
                     );})}
@@ -443,13 +453,13 @@ function Certificaciones_vigencia() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRenovarDialog({ open: false, certificacion: null })}>
+          <SafeButton onClick={() => setRenovarDialog({ open: false, certificacion: null })}>
             {renovarDialog.yaEnviada ? "Cerrar" : "Cancelar"}
-          </Button>
+          </SafeButton>
           {!renovarDialog.yaEnviada && (
-            <Button variant="contained" onClick={confirmarRenovar} disabled={renovarDialog.loading}>
+            <SafeButton variant="contained" onClick={confirmarRenovar} disabled={renovarDialog.loading}>
               {renovarDialog.loading ? "Creando..." : "Crear solicitud de renovación"}
-            </Button>
+            </SafeButton>
           )}
         </DialogActions>
       </Dialog>

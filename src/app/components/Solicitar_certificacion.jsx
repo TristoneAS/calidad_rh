@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   CardContent,
-  Button,
   Typography,
   Alert,
   FormControl,
@@ -21,6 +20,7 @@ import {
   TextField,
 } from "@mui/material";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import PersonIcon from "@mui/icons-material/Person";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -253,6 +253,8 @@ function Solicitar_certificacion() {
   };
 
   const handleGuardar = async () => {
+    if (loading) return;
+
     if (!empleadoEncontrado) {
       showAlert("Por favor busca y selecciona un empleado", "error");
       return;
@@ -281,38 +283,39 @@ function Solicitar_certificacion() {
       .join(" ")
       .trim() || "Sin nombre";
 
-    // Verificar una última vez antes de guardar
-    const verificaciones = await Promise.all(
-      procesosSeleccionados.map((proceso) =>
-        verificarSolicitudExistente(empId.toString(), proceso.id.toString())
-      )
-    );
-
-    const procesosDuplicados = procesosSeleccionados.filter(
-      (proceso, index) => verificaciones[index]?.existe
-    );
-
-    if (procesosDuplicados.length > 0) {
-      showAlert(
-        `No se pueden crear solicitudes duplicadas. Ya existen solicitudes para: ${procesosDuplicados
-          .map((p) => p.nombre)
-          .join(", ")}`,
-        "error"
-      );
-      return;
-    }
-
-    const solicitudes = procesosSeleccionados.map((proceso) => ({
-      emp_id: empId,
-      emp_nombre: empNombre,
-      id_certificacion: proceso.id,
-      nombre_certificacion: proceso.nombre,
-      status: "pendiente",
-      solicitado_por: usuarioNombre,
-    }));
-
     try {
       setLoading(true);
+
+      // Verificar una última vez antes de guardar
+      const verificaciones = await Promise.all(
+        procesosSeleccionados.map((proceso) =>
+          verificarSolicitudExistente(empId.toString(), proceso.id.toString())
+        )
+      );
+
+      const procesosDuplicados = procesosSeleccionados.filter(
+        (proceso, index) => verificaciones[index]?.existe
+      );
+
+      if (procesosDuplicados.length > 0) {
+        showAlert(
+          `No se pueden crear solicitudes duplicadas. Ya existen solicitudes para: ${procesosDuplicados
+            .map((p) => p.nombre)
+            .join(", ")}`,
+          "error"
+        );
+        return;
+      }
+
+      const solicitudes = procesosSeleccionados.map((proceso) => ({
+        emp_id: empId,
+        emp_nombre: empNombre,
+        id_certificacion: proceso.id,
+        nombre_certificacion: proceso.nombre,
+        status: "pendiente",
+        solicitado_por: usuarioNombre,
+      }));
+
       const response = await axios.post("/api/solicitudes_certificacion", {
         solicitudes,
       });
@@ -324,6 +327,8 @@ function Solicitar_certificacion() {
         setEmpleadoEncontrado(null);
         setProcesoSeleccionado("");
         setProcesosSeleccionados([]);
+        // Mantener botón bloqueado hasta finalizar la recarga de datos
+        await fetchProcesosCertificables();
       } else {
         showAlert(
           response.data.error || "Error al crear las solicitudes",
@@ -396,7 +401,7 @@ function Solicitar_certificacion() {
               }}
               placeholder="Ingresa el ID del empleado"
             />
-            <Button
+            <SafeButton
               variant="contained"
               onClick={buscarEmpleado}
               disabled={loadingEmpleado}
@@ -414,7 +419,7 @@ function Solicitar_certificacion() {
               }}
             >
               {loadingEmpleado ? "Buscando..." : "Buscar"}
-            </Button>
+            </SafeButton>
           </Box>
 
           {empleadoEncontrado && (
@@ -494,7 +499,7 @@ function Solicitar_certificacion() {
                       })}
                   </Select>
                 </FormControl>
-                <Button
+                <SafeButton
                   variant="contained"
                   onClick={handleAgregarProceso}
                   sx={{
@@ -504,7 +509,7 @@ function Solicitar_certificacion() {
                   }}
                 >
                   Agregar
-                </Button>
+                </SafeButton>
               </Box>
 
               {procesosSeleccionados.length > 0 && (
@@ -561,7 +566,7 @@ function Solicitar_certificacion() {
 
           {/* Botón de guardar */}
           <Box display="flex" justifyContent="flex-end" mt={4}>
-            <Button
+            <SafeButton
               variant="contained"
               size="large"
               onClick={handleGuardar}
@@ -576,7 +581,7 @@ function Solicitar_certificacion() {
               }}
             >
               {loading ? "Guardando..." : "Guardar Solicitudes"}
-            </Button>
+            </SafeButton>
           </Box>
         </CardContent>
       </Card>

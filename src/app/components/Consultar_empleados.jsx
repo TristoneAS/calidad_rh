@@ -8,11 +8,11 @@ import {
   Alert,
   CircularProgress,
   TextField,
-  Button,
   alpha,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
+import SafeButton from "@/app/components/common/SafeButton";
 import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -241,7 +241,7 @@ function Consultar_empleados() {
               placeholder="Ingresa el número de empleado"
               sx={{ maxWidth: 400 }}
             />
-            <Button
+            <SafeButton
               variant="contained"
               onClick={handleSearch}
               startIcon={<SearchIcon />}
@@ -252,9 +252,9 @@ function Consultar_empleados() {
               }}
             >
               Buscar
-            </Button>
+            </SafeButton>
             {empIdFilter && (
-              <Button
+              <SafeButton
                 variant="outlined"
                 onClick={handleClear}
                 startIcon={<ClearIcon />}
@@ -268,7 +268,7 @@ function Consultar_empleados() {
                 }}
               >
                 Limpiar
-              </Button>
+              </SafeButton>
             )}
           </Box>
 
