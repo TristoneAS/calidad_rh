@@ -5,7 +5,7 @@ import LayoutComponent from "@/app/components/LayoutComponent";
 function page() {
   return (
     <LayoutComponent>
-      <Consultar_solicitudes />
+      <Consultar_solicitudes modo="consultas" />
     </LayoutComponent>
   );
 }

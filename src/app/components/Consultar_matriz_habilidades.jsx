@@ -32,6 +32,7 @@ import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
@@ -99,7 +100,7 @@ function Consultar_matriz_habilidades() {
       ] = await Promise.all([
         axios.get("/api/cursos"),
         axios.get("/api/procesos"),
-        axios.get("/api/empleados"),
+        axios.get("/api/empleados_matriz"),
         axios.get("/api/empleados_cursos"),
         axios.get("/api/empleados_procesos"),
       ]);
@@ -163,6 +164,22 @@ function Consultar_matriz_habilidades() {
       );
     }
     return false;
+  };
+
+  // Estado del proceso: 'vigente' | 'vencida' | 'sin' (solo para procesos con certificación)
+  const estadoProceso = (empId, procesoId) => {
+    const empIdStr = empId?.toString();
+    const procesoIdStr = procesoId?.toString();
+    const ep = empleadosProcesos.find(
+      (p) =>
+        (p.emp_id?.toString() === empIdStr || p.id?.toString() === empIdStr) &&
+        p.id_proceso?.toString() === procesoIdStr
+    );
+    if (!ep) return "sin";
+    const fv = ep.fecha_vencimiento;
+    if (!fv) return "vigente";
+    const hoy = new Date().toISOString().split("T")[0];
+    return fv < hoy ? "vencida" : "vigente";
   };
 
   // Función para calcular la edad a partir de la fecha de nacimiento
@@ -240,12 +257,10 @@ function Consultar_matriz_habilidades() {
 
     // Filtro por género - solo si no es "todos"
     if (filtroSexo && filtroSexo !== "todos" && filtroSexo !== "") {
-      // Normalizar el género del empleado (en BD es "HOMBRE" o "MUJER")
       const sexoEmpleado = empleado.sexo
         ? String(empleado.sexo).toUpperCase().trim()
         : "";
 
-      // Mapear el valor del filtro ("M" o "F") a los valores de la BD ("HOMBRE" o "MUJER")
       const filtroSexoUpper = String(filtroSexo).toUpperCase().trim();
       let filtroSexoBD = "";
       if (filtroSexoUpper === "M") {
@@ -253,19 +268,11 @@ function Consultar_matriz_habilidades() {
       } else if (filtroSexoUpper === "F") {
         filtroSexoBD = "MUJER";
       } else {
-        // Si el filtro ya viene como "HOMBRE" o "MUJER", usarlo directamente
         filtroSexoBD = filtroSexoUpper;
       }
 
-      // Si el empleado no tiene género definido, excluirlo cuando se filtra por género
-      if (!sexoEmpleado || sexoEmpleado === "") {
-        return false;
-      }
-
-      // Comparar el género - si no coincide, excluir
-      if (sexoEmpleado !== filtroSexoBD) {
-        return false;
-      }
+      if (!sexoEmpleado || sexoEmpleado === "") return false;
+      if (sexoEmpleado !== filtroSexoBD) return false;
     }
 
     // Filtro por rango de edades - solo si hay al menos un valor
@@ -274,18 +281,11 @@ function Consultar_matriz_habilidades() {
 
     if (tieneEdadMin || tieneEdadMax) {
       const edad = empleado.edad;
-
-      // Si no tiene edad calculada, excluir cuando se filtra por edad
       if (edad === null || edad === undefined || isNaN(edad)) return false;
 
-      // Convertir los valores de filtro a números
       const edadMin = tieneEdadMin ? parseInt(filtroEdadMin.trim(), 10) : 0;
       const edadMax = tieneEdadMax ? parseInt(filtroEdadMax.trim(), 10) : 150;
-
-      // Validar que sean números válidos
       if (isNaN(edadMin) || isNaN(edadMax)) return false;
-
-      // Aplicar el filtro de rango
       if (edad < edadMin || edad > edadMax) return false;
     }
 
@@ -373,6 +373,10 @@ function Consultar_matriz_habilidades() {
         empleado.nombre,
         empleado.emp_id,
         ...items.map((item) => {
+          if (tipo === "proceso") {
+            const estado = estadoProceso(empleado.emp_id, item.id);
+            return estado === "vigente" ? "✓" : estado === "vencida" ? "!" : "✗";
+          }
           const tiene = tieneRelacion(empleado.emp_id, item.id, tipo);
           return tiene ? "✓" : "✗";
         }),
@@ -810,20 +814,27 @@ function Consultar_matriz_habilidades() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     mb: 2,
+                    flexWrap: "wrap",
+                    gap: 1,
                   }}
                 >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontWeight: 600,
-                      color: colors.primary.dark,
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <RequestQuoteIcon sx={{ mr: 1, fontSize: 24 }} />
-                    Matriz de Procesos
-                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 600,
+                        color: colors.primary.dark,
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <RequestQuoteIcon sx={{ mr: 1, fontSize: 24 }} />
+                      Matriz de Procesos
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      ✓ Vigente | ! Vencida | ✗ Sin certificación
+                    </Typography>
+                  </Box>
                   <Button
                     variant="contained"
                     startIcon={<DownloadIcon />}
@@ -941,20 +952,23 @@ function Consultar_matriz_habilidades() {
                             </Typography>
                           </TableCell>
                           {procesos.map((proceso) => {
-                            const tiene = tieneRelacion(
-                              empleado.emp_id,
-                              proceso.id,
-                              "proceso"
-                            );
+                            const estado = estadoProceso(empleado.emp_id, proceso.id);
                             return (
                               <TableCell key={proceso.id} align="center">
-                                {tiene ? (
+                                {estado === "vigente" ? (
                                   <CheckCircleIcon
                                     sx={{ color: "#10B981", fontSize: 28 }}
+                                    titleAccess="Certificación vigente"
+                                  />
+                                ) : estado === "vencida" ? (
+                                  <WarningAmberIcon
+                                    sx={{ color: "#F59E0B", fontSize: 28 }}
+                                    titleAccess="Certificación vencida"
                                   />
                                 ) : (
                                   <CancelIcon
                                     sx={{ color: "#EF4444", fontSize: 28 }}
+                                    titleAccess="Sin certificación"
                                   />
                                 )}
                               </TableCell>

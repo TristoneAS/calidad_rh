@@ -60,10 +60,12 @@ export async function POST(request) {
       }
     }
 
-    // Insertar todos los enrolamientos
+    // Insertar todos los enrolamientos (con soporte para certificaciones y vencimiento)
     const insertPromises = enrolamientos.map((enrolamiento) => {
+      const esCert = enrolamiento.es_certificacion ? 1 : 0;
+      const fechaVenc = enrolamiento.fecha_vencimiento || null;
       return conn.execute(
-        "INSERT INTO empleados_procesos (emp_id, emp_nombre, id_proceso, nombre_proceso, descripcion_proceso, fecha, enrolado_por) VALUES (?, ?, ?, ?, ?, CURDATE(), ?)",
+        "INSERT INTO empleados_procesos (emp_id, emp_nombre, id_proceso, nombre_proceso, descripcion_proceso, fecha, enrolado_por, es_certificacion, fecha_vencimiento) VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, ?)",
         [
           enrolamiento.emp_id,
           enrolamiento.emp_nombre,
@@ -71,9 +73,13 @@ export async function POST(request) {
           enrolamiento.nombre_proceso,
           enrolamiento.descripcion_proceso || "",
           enrolamiento.enrolado_por || "Alex",
+          esCert,
+          fechaVenc,
         ]
       );
-    });    await Promise.all(insertPromises);    return NextResponse.json({
+    });
+    await Promise.all(insertPromises);
+    return NextResponse.json({
       success: true,
       message: `${enrolamientos.length} enrolamiento(s) creado(s) exitosamente`,
       data: { count: enrolamientos.length },

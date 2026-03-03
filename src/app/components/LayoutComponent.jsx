@@ -34,6 +34,7 @@ import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import BusinessIcon from "@mui/icons-material/Business";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import LogoutIcon from "@mui/icons-material/Logout";
+import DashboardIcon from "@mui/icons-material/Dashboard";
 
 // Colores profesionales basados en el logo
 const colors = {
@@ -112,7 +113,10 @@ const App = ({ children }) => {
       // 1) Intentar desde data.data.groups[0].cn (última palabra)
       const cn = data?.data?.groups?.[0]?.cn;
       if (cn && typeof cn === "string") {
-        const parts = cn.trim().split(/[\s._-]+/).filter(Boolean);
+        const parts = cn
+          .trim()
+          .split(/[\s._-]+/)
+          .filter(Boolean);
         const lastWord = parts.length ? parts[parts.length - 1] : "";
         if (validRoles.includes(lastWord)) {
           setUserRole(lastWord);
@@ -402,143 +406,72 @@ const App = ({ children }) => {
           </Typography>
         </Box>
 
-        {/* 🔹 DEPARTAMENTO: CALIDAD */}
-        {showCalidad && (
+        {/* Navegación al Dashboard */}
         <Box sx={{ px: isSmallScreen ? 1 : 2, pt: isSmallScreen ? 1 : 2 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              px: isSmallScreen ? 1 : 2,
-              py: isSmallScreen ? 1 : 1.5,
-              fontWeight: 700,
-              fontSize: isSmallScreen ? "0.7rem" : "0.85rem",
-              color: colors.primary.dark,
-              display: "flex",
-              alignItems: "center",
-              bgcolor: alpha(colors.primary.main, 0.08),
-              borderRadius: 2,
-              mb: 1,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
+          <ListItemButton
+            onClick={() => {
+              router.push("/dashboard");
+              handleMenuItemClick();
             }}
-          >
-            <BusinessIcon
-              sx={{
-                mr: isSmallScreen ? 1 : 1.5,
-                fontSize: isSmallScreen ? 16 : 20,
-              }}
-            />
-            Calidad
-          </Typography>
-
-          {/* Calidad - Solicitudes */}
-          <Accordion
-            expanded={expanded === "Calidad-Solicitudes"}
-            onChange={handleChange("Calidad-Solicitudes")}
             sx={{
-              boxShadow: "none",
-              "&:before": { display: "none" },
-              border: `1px solid ${alpha(colors.primary.main, 0.1)}`,
-              borderRadius: 2,
-              mb: 1,
-              "&.Mui-expanded": {
-                bgcolor: alpha(colors.primary.main, 0.03),
+              borderRadius: 1.5,
+              bgcolor: alpha(colors.primary.main, 0.08),
+              "&:hover": {
+                bgcolor: alpha(colors.primary.main, 0.15),
               },
             }}
           >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMoreIcon sx={{ color: colors.primary.main }} />
-              }
+            <DashboardIcon
               sx={{
-                "&:hover": {
-                  bgcolor: alpha(colors.primary.main, 0.05),
-                },
+                mr: isSmallScreen ? 1 : 1.5,
+                fontSize: isSmallScreen ? 20 : 24,
+                color: colors.primary.dark,
+              }}
+            />
+            <ListItemText
+              primary="Dashboard"
+              primaryTypographyProps={{
+                fontSize: isSmallScreen ? "0.8rem" : "0.9rem",
+                fontWeight: 600,
+                color: colors.primary.dark,
+              }}
+            />
+          </ListItemButton>
+        </Box>
+
+        {/* 🔹 DEPARTAMENTO: SUPERVISORES */}
+        {showCalidad && (
+          <Box sx={{ px: isSmallScreen ? 1 : 2, pt: isSmallScreen ? 1 : 2 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                px: isSmallScreen ? 1 : 2,
+                py: isSmallScreen ? 1 : 1.5,
+                fontWeight: 700,
+                fontSize: isSmallScreen ? "0.7rem" : "0.85rem",
+                color: colors.primary.dark,
+                display: "flex",
+                alignItems: "center",
+                bgcolor: alpha(colors.primary.main, 0.08),
                 borderRadius: 2,
+                mb: 1,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
               }}
             >
-              <RequestQuoteIcon
+              <BusinessIcon
                 sx={{
                   mr: isSmallScreen ? 1 : 1.5,
-                  color: colors.primary.main,
-                  fontSize: isSmallScreen ? 18 : 22,
+                  fontSize: isSmallScreen ? 16 : 20,
                 }}
               />
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
-                }}
-              >
-                Solicitudes a entrenamiento
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0, pb: 1 }}>
-              <List disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/calidad/solicitar_certificacion");
-                    handleMenuItemClick();
-                  }}
-                  sx={{
-                    borderRadius: 1.5,
-                    "&:hover": {
-                      bgcolor: alpha(colors.primary.main, 0.08),
-                    },
-                  }}
-                >
-                  <PersonAddIcon
-                    sx={{
-                      mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
-                      color: colors.primary.dark,
-                    }}
-                  />
-                  <ListItemText
-                    primary="Solicitar Certificación"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/calidad/gestionar_examenes");
-                    handleMenuItemClick();
-                  }}
-                  sx={{
-                    borderRadius: 1.5,
-                    mt: 0.5,
-                    "&:hover": {
-                      bgcolor: alpha(colors.primary.main, 0.08),
-                    },
-                  }}
-                >
-                  <AssessmentIcon
-                    sx={{
-                      mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
-                      color: colors.primary.dark,
-                    }}
-                  />
-                  <ListItemText
-                    primary="Gestionar Exámenes"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </ListItemButton>
-              </List>
-            </AccordionDetails>
-          </Accordion>
+              Supervisores
+            </Typography>
 
-          {/* Calidad - Líderes de Calidad (solo Admin) */}
-          {isAdmin && (
+            {/* Calidad - Solicitudes */}
             <Accordion
-              expanded={expanded === "Calidad-Lideres"}
-              onChange={handleChange("Calidad-Lideres")}
+              expanded={expanded === "Calidad-Solicitudes"}
+              onChange={handleChange("Calidad-Solicitudes")}
               sx={{
                 boxShadow: "none",
                 "&:before": { display: "none" },
@@ -561,7 +494,7 @@ const App = ({ children }) => {
                   borderRadius: 2,
                 }}
               >
-                <PeopleIcon
+                <RequestQuoteIcon
                   sx={{
                     mr: isSmallScreen ? 1 : 1.5,
                     color: colors.primary.main,
@@ -574,14 +507,14 @@ const App = ({ children }) => {
                     fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
                   }}
                 >
-                  Líderes de Calidad
+                  Solicitudes a entrenamiento
                 </Typography>
               </AccordionSummary>
               <AccordionDetails sx={{ pt: 0, pb: 1 }}>
                 <List disablePadding>
                   <ListItemButton
                     onClick={() => {
-                      router.push("/dashboard/calidad/lideres_calidad");
+                      router.push("/dashboard/calidad/solicitar_certificacion");
                       handleMenuItemClick();
                     }}
                     sx={{
@@ -599,7 +532,35 @@ const App = ({ children }) => {
                       }}
                     />
                     <ListItemText
-                      primary="Administrar Líderes"
+                      primary="Solicitar Certificación"
+                      primaryTypographyProps={{
+                        fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                        fontWeight: 500,
+                      }}
+                    />
+                  </ListItemButton>
+                  <ListItemButton
+                    onClick={() => {
+                      router.push("/dashboard/calidad/gestionar_examenes");
+                      handleMenuItemClick();
+                    }}
+                    sx={{
+                      borderRadius: 1.5,
+                      mt: 0.5,
+                      "&:hover": {
+                        bgcolor: alpha(colors.primary.main, 0.08),
+                      },
+                    }}
+                  >
+                    <AssessmentIcon
+                      sx={{
+                        mr: isSmallScreen ? 1 : 1.5,
+                        fontSize: isSmallScreen ? 16 : 20,
+                        color: colors.primary.dark,
+                      }}
+                    />
+                    <ListItemText
+                      primary="Gestionar Auditoría de Producto"
                       primaryTypographyProps={{
                         fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
                         fontWeight: 500,
@@ -609,8 +570,84 @@ const App = ({ children }) => {
                 </List>
               </AccordionDetails>
             </Accordion>
-          )}
-        </Box>
+
+            {/* Calidad - Líderes de Calidad (solo Admin) */}
+            {isAdmin && (
+              <Accordion
+                expanded={expanded === "Calidad-Lideres"}
+                onChange={handleChange("Calidad-Lideres")}
+                sx={{
+                  boxShadow: "none",
+                  "&:before": { display: "none" },
+                  border: `1px solid ${alpha(colors.primary.main, 0.1)}`,
+                  borderRadius: 2,
+                  mb: 1,
+                  "&.Mui-expanded": {
+                    bgcolor: alpha(colors.primary.main, 0.03),
+                  },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={
+                    <ExpandMoreIcon sx={{ color: colors.primary.main }} />
+                  }
+                  sx={{
+                    "&:hover": {
+                      bgcolor: alpha(colors.primary.main, 0.05),
+                    },
+                    borderRadius: 2,
+                  }}
+                >
+                  <PeopleIcon
+                    sx={{
+                      mr: isSmallScreen ? 1 : 1.5,
+                      color: colors.primary.main,
+                      fontSize: isSmallScreen ? 18 : 22,
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
+                    }}
+                  >
+                    Líderes de Calidad
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                  <List disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/calidad/lideres_calidad");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.primary.main, 0.08),
+                        },
+                      }}
+                    >
+                      <PersonAddIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.primary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Administrar Líderes"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  </List>
+                </AccordionDetails>
+              </Accordion>
+            )}
+          </Box>
         )}
 
         {showRH && (
@@ -620,298 +657,332 @@ const App = ({ children }) => {
             />
 
             {/* 🔹 DEPARTAMENTO: RH */}
-        <Box sx={{ px: isSmallScreen ? 1 : 2 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              px: isSmallScreen ? 1 : 2,
-              py: isSmallScreen ? 1 : 1.5,
-              fontWeight: 700,
-              fontSize: isSmallScreen ? "0.7rem" : "0.85rem",
-              color: colors.secondary.dark,
-              display: "flex",
-              alignItems: "center",
-              bgcolor: alpha(colors.secondary.main, 0.12),
-              borderRadius: 2,
-              mb: 1,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-            }}
-          >
-            <PeopleIcon
-              sx={{
-                mr: isSmallScreen ? 1 : 1.5,
-                fontSize: isSmallScreen ? 16 : 20,
-              }}
-            />
-            Recursos Humanos
-          </Typography>
-
-          {/* RH - Cursos */}
-          <Accordion
-            expanded={expanded === "RH-Cursos"}
-            onChange={handleChange("RH-Cursos")}
-            sx={{
-              boxShadow: "none",
-              "&:before": { display: "none" },
-              border: `1px solid ${alpha(colors.secondary.main, 0.15)}`,
-              borderRadius: 2,
-              mb: 1,
-              "&.Mui-expanded": {
-                bgcolor: alpha(colors.secondary.main, 0.05),
-              },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMoreIcon sx={{ color: colors.secondary.dark }} />
-              }
-              sx={{
-                "&:hover": {
-                  bgcolor: alpha(colors.secondary.main, 0.08),
-                },
-                borderRadius: 2,
-              }}
-            >
-              <SchoolIcon
-                sx={{
-                  mr: isSmallScreen ? 1 : 1.5,
-                  color: colors.secondary.dark,
-                  fontSize: isSmallScreen ? 18 : 22,
-                }}
-              />
+            <Box sx={{ px: isSmallScreen ? 1 : 2 }}>
               <Typography
+                variant="subtitle2"
                 sx={{
-                  fontWeight: 600,
-                  fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
+                  px: isSmallScreen ? 1 : 2,
+                  py: isSmallScreen ? 1 : 1.5,
+                  fontWeight: 700,
+                  fontSize: isSmallScreen ? "0.7rem" : "0.85rem",
+                  color: colors.secondary.dark,
+                  display: "flex",
+                  alignItems: "center",
+                  bgcolor: alpha(colors.secondary.main, 0.12),
+                  borderRadius: 2,
+                  mb: 1,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
                 }}
               >
-                Cursos
+                <PeopleIcon
+                  sx={{
+                    mr: isSmallScreen ? 1 : 1.5,
+                    fontSize: isSmallScreen ? 16 : 20,
+                  }}
+                />
+                Recursos Humanos
               </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0, pb: 1 }}>
-              <List disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/cursos/alta_curso");
-                    handleMenuItemClick();
-                  }}
-                  sx={{
-                    cursor: "pointer",
-                    borderRadius: 1.5,
-                    mb: 0.5,
-                    "&:hover": {
-                      bgcolor: alpha(colors.secondary.main, 0.1),
-                    },
-                  }}
-                >
-                  <AddCircleOutlineIcon
-                    sx={{
-                      mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
-                      color: colors.secondary.dark,
-                    }}
-                  />
-                  <ListItemText
-                    primary="Alta"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/cursos/enrolar_curso");
-                    handleMenuItemClick();
-                  }}
-                  sx={{
-                    borderRadius: 1.5,
-                    "&:hover": {
-                      bgcolor: alpha(colors.secondary.main, 0.1),
-                    },
-                  }}
-                >
-                  <PersonAddIcon
-                    sx={{
-                      mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
-                      color: colors.secondary.dark,
-                    }}
-                  />
-                  <ListItemText
-                    primary="Enrolar (por N° Empleado)"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </ListItemButton>
-              </List>
-            </AccordionDetails>
-          </Accordion>
 
-          {/* RH - Certificaciones (eliminado, ahora se maneja con procesos certificables) */}
-
-          {/* RH - Procesos */}
-          <Accordion
-            expanded={expanded === "RH-Procesos"}
-            onChange={handleChange("RH-Procesos")}
-            sx={{
-              boxShadow: "none",
-              "&:before": { display: "none" },
-              border: `1px solid ${alpha(colors.secondary.main, 0.15)}`,
-              borderRadius: 2,
-              mb: 1,
-              "&.Mui-expanded": {
-                bgcolor: alpha(colors.secondary.main, 0.05),
-              },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMoreIcon sx={{ color: colors.secondary.dark }} />
-              }
-              sx={{
-                "&:hover": {
-                  bgcolor: alpha(colors.secondary.main, 0.08),
-                },
-                borderRadius: 2,
-              }}
-            >
-              <RequestQuoteIcon
+              {/* RH - Cursos */}
+              <Accordion
+                expanded={expanded === "RH-Cursos"}
+                onChange={handleChange("RH-Cursos")}
                 sx={{
-                  mr: isSmallScreen ? 1 : 1.5,
-                  color: colors.secondary.dark,
-                  fontSize: isSmallScreen ? 18 : 22,
-                }}
-              />
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
+                  boxShadow: "none",
+                  "&:before": { display: "none" },
+                  border: `1px solid ${alpha(colors.secondary.main, 0.15)}`,
+                  borderRadius: 2,
+                  mb: 1,
+                  "&.Mui-expanded": {
+                    bgcolor: alpha(colors.secondary.main, 0.05),
+                  },
                 }}
               >
-                Procesos
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0, pb: 1 }}>
-              <List disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/procesos/alta_procesos");
-                    handleMenuItemClick();
-                  }}
+                <AccordionSummary
+                  expandIcon={
+                    <ExpandMoreIcon sx={{ color: colors.secondary.dark }} />
+                  }
                   sx={{
-                    borderRadius: 1.5,
-                    mb: 0.5,
                     "&:hover": {
-                      bgcolor: alpha(colors.secondary.main, 0.1),
+                      bgcolor: alpha(colors.secondary.main, 0.08),
                     },
-                  }}
-                >
-                  <AddCircleOutlineIcon
-                    sx={{
-                      mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
-                      color: colors.secondary.dark,
-                    }}
-                  />
-                  <ListItemText
-                    primary="Alta"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/procesos/enrolar_proceso");
-                    handleMenuItemClick();
-                  }}
-                  sx={{
-                    borderRadius: 1.5,
-                    "&:hover": {
-                      bgcolor: alpha(colors.secondary.main, 0.1),
-                    },
-                  }}
-                >
-                  <PersonAddIcon
-                    sx={{
-                      mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
-                      color: colors.secondary.dark,
-                    }}
-                  />
-                  <ListItemText
-                    primary="Enrolar (por N° Empleado)"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/procesos/gestionar_entrenamientos");
-                    handleMenuItemClick();
-                  }}
-                  sx={{
-                    borderRadius: 1.5,
-                    mt: 0.5,
-                    "&:hover": {
-                      bgcolor: alpha(colors.secondary.main, 0.1),
-                    },
+                    borderRadius: 2,
                   }}
                 >
                   <SchoolIcon
                     sx={{
                       mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
                       color: colors.secondary.dark,
+                      fontSize: isSmallScreen ? 18 : 22,
                     }}
                   />
-                  <ListItemText
-                    primary="Gestionar Entrenamientos"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
                     }}
-                  />
-                </ListItemButton>
-                <ListItemButton
-                  onClick={() => {
-                    router.push("/dashboard/procesos/asignar_certificacion");
-                    handleMenuItemClick();
-                  }}
+                  >
+                    Cursos
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                  <List disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/cursos/alta_curso");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        cursor: "pointer",
+                        borderRadius: 1.5,
+                        mb: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <AddCircleOutlineIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Alta"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/cursos/enrolar_curso");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <PersonAddIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Enrolar (por N° Empleado)"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  </List>
+                </AccordionDetails>
+              </Accordion>
+
+              {/* RH - Certificaciones (eliminado, ahora se maneja con procesos certificables) */}
+
+              {/* RH - Procesos */}
+              <Accordion
+                expanded={expanded === "RH-Procesos"}
+                onChange={handleChange("RH-Procesos")}
+                sx={{
+                  boxShadow: "none",
+                  "&:before": { display: "none" },
+                  border: `1px solid ${alpha(colors.secondary.main, 0.15)}`,
+                  borderRadius: 2,
+                  mb: 1,
+                  "&.Mui-expanded": {
+                    bgcolor: alpha(colors.secondary.main, 0.05),
+                  },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={
+                    <ExpandMoreIcon sx={{ color: colors.secondary.dark }} />
+                  }
                   sx={{
-                    borderRadius: 1.5,
-                    mt: 0.5,
                     "&:hover": {
-                      bgcolor: alpha(colors.secondary.main, 0.1),
+                      bgcolor: alpha(colors.secondary.main, 0.08),
                     },
+                    borderRadius: 2,
                   }}
                 >
-                  <WorkspacePremiumIcon
+                  <RequestQuoteIcon
                     sx={{
                       mr: isSmallScreen ? 1 : 1.5,
-                      fontSize: isSmallScreen ? 16 : 20,
                       color: colors.secondary.dark,
+                      fontSize: isSmallScreen ? 18 : 22,
                     }}
                   />
-                  <ListItemText
-                    primary="Asignar Certificación"
-                    primaryTypographyProps={{
-                      fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                      fontWeight: 500,
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
                     }}
-                  />
-                </ListItemButton>
-              </List>
-            </AccordionDetails>
-          </Accordion>
-        </Box>
+                  >
+                    Procesos
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                  <List disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/procesos/alta_procesos");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mb: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <AddCircleOutlineIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Alta"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/procesos/enrolar_proceso");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <PersonAddIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Enrolar (por N° Empleado)"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push(
+                          "/dashboard/procesos/gestionar_entrenamientos",
+                        );
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mt: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <SchoolIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Gestionar Examenes de entrenamiento"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push(
+                          "/dashboard/procesos/asignar_certificacion",
+                        );
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mt: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <WorkspacePremiumIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Asignar Certificación"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push(
+                          "/dashboard/calidad/certificaciones_vigencia",
+                        );
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mt: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <WorkspacePremiumIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Certificaciones (vigencia y renovación)"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  </List>
+                </AccordionDetails>
+              </Accordion>
+            </Box>
           </>
         )}
 

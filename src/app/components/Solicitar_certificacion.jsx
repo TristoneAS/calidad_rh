@@ -51,14 +51,46 @@ function Solicitar_certificacion() {
   const [loadingEmpleado, setLoadingEmpleado] = useState(false);
   const [loadingProcesos, setLoadingProcesos] = useState(true);
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
-  const [usuario, setUsuario] = useState("");
+  const [usuarioEmpId, setUsuarioEmpId] = useState("");
+  const [usuarioNombre, setUsuarioNombre] = useState("");
 
-  // Obtener usuario del localStorage
+  // Obtener emp_id del usuario loggeado y consultar nombre (NOMBRE + APELLIDO1)
   useEffect(() => {
-    const user = localStorage.getItem("usuario");
-    if (user) {
-      setUsuario(user);
-    }
+    if (typeof window === "undefined") return;
+    const fetchUsuario = async () => {
+      try {
+        const storedUser = window.localStorage.getItem("user");
+        if (!storedUser) return;
+
+        const data = JSON.parse(storedUser);
+        const empId =
+          data?.emp_id ||
+          data?.data?.users?.[0]?.employeeID ||
+          null;
+
+        if (!empId) return;
+
+        setUsuarioEmpId(String(empId));
+
+        const response = await axios.get(
+          `/api/empleados?emp_id=${encodeURIComponent(empId)}`
+        );
+        if (response.data.success && response.data.data) {
+          const emp = response.data.data;
+          const nombre = (emp.NOMBRE || emp.nombre || "").trim();
+          const apellido1 = (emp.APELLIDO1 || emp.apellido1 || "").trim();
+          const nombreCompleto = [nombre, apellido1].filter(Boolean).join(" ");
+          setUsuarioNombre(nombreCompleto || String(empId));
+        } else {
+          setUsuarioNombre(String(empId));
+        }
+      } catch (err) {
+        console.error("Error al obtener datos del usuario:", err);
+        const storedUsuario = window.localStorage.getItem("usuario");
+        if (storedUsuario) setUsuarioNombre(storedUsuario);
+      }
+    };
+    fetchUsuario();
   }, []);
 
   // Cargar procesos certificables al montar el componente
@@ -91,6 +123,16 @@ function Solicitar_certificacion() {
     }, 5000);
   };
 
+  // Calcular días de antigüedad desde FECHA_ANTIGUEDAD
+  const calcularDiasAntiguedad = (fechaAntiguedad) => {
+    if (!fechaAntiguedad) return null;
+    const fecha = new Date(fechaAntiguedad);
+    if (isNaN(fecha.getTime())) return null;
+    const hoy = new Date();
+    const diff = hoy.getTime() - fecha.getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
   const buscarEmpleado = async () => {
     if (!empIdInput.trim()) {
       showAlert("Por favor ingresa un ID de empleado", "error");
@@ -100,12 +142,30 @@ function Solicitar_certificacion() {
     try {
       setLoadingEmpleado(true);
       const response = await axios.get(
-        `/api/empleados?emp_id=${empIdInput.trim()}`
+        `/api/empleados_matriz?emp_id=${empIdInput.trim()}`
       );
 
       if (response.data.success && response.data.data) {
-        setEmpleadoEncontrado(response.data.data);
-        showAlert("Empleado encontrado", "success");
+        const emp = response.data.data;
+        const fechaAntig = emp.FECHA_ANTIGUEDAD || emp.fecha_antiguedad;
+        const diasAntiguedad = calcularDiasAntiguedad(fechaAntig);
+
+        if (!fechaAntig) {
+          showAlert(
+            "No se puede verificar la antigüedad del empleado. Falta FECHA_ANTIGUEDAD en el registro.",
+            "error"
+          );
+          setEmpleadoEncontrado(null);
+        } else if (diasAntiguedad < 30) {
+          showAlert(
+            `El empleado no cumple con la antigüedad requerida. Tiene ${diasAntiguedad} días (mínimo 30 días)`,
+            "error"
+          );
+          setEmpleadoEncontrado(null);
+        } else {
+          setEmpleadoEncontrado(emp);
+          showAlert("Empleado encontrado", "success");
+        }
       } else {
         showAlert("Empleado no encontrado", "error");
         setEmpleadoEncontrado(null);
@@ -123,16 +183,19 @@ function Solicitar_certificacion() {
     }
   };
 
-  // Función para verificar si existe una solicitud pendiente o en progreso
+  // Verificar si existe solicitud activa o certificación vigente (RH ya asignó)
   const verificarSolicitudExistente = async (empId, idProceso) => {
     try {
       const response = await axios.get(
         `/api/solicitudes_certificacion?verificar=true&emp_id=${empId}&id_certificacion=${idProceso}`
       );
-      return response.data.existe || false;
+      return {
+        existe: response.data.existe || false,
+        motivo: response.data.motivo || null,
+      };
     } catch (error) {
-      console.error("Error al verificar solicitud existente:", error);
-      return false;
+      console.error("Error al verificar:", error);
+      return { existe: false, motivo: null };
     }
   };
 
@@ -159,22 +222,23 @@ function Solicitar_certificacion() {
       return;
     }
 
-    // Verificar si ya existe una solicitud pendiente o en progreso
+    // Verificar si ya existe solicitud activa o certificación vigente asignada por RH
     const empId =
       empleadoEncontrado.NUM_EMPLEADO ||
       empleadoEncontrado.num_empleado ||
       empleadoEncontrado.emp_id ||
       empleadoEncontrado.id;
-    const existeSolicitud = await verificarSolicitudExistente(
+    const { existe, motivo } = await verificarSolicitudExistente(
       empId.toString(),
       proceso.id.toString()
     );
 
-    if (existeSolicitud) {
-      showAlert(
-        `Ya existe una solicitud pendiente o en progreso para el empleado ${empId} y el proceso certificable ${proceso.nombre}`,
-        "error"
-      );
+    if (existe) {
+      const msg =
+        motivo === "certificacion_vigente"
+          ? `El empleado ya tiene la certificación "${proceso.nombre}" asignada por RH (vigente). No se puede solicitar de nuevo.`
+          : `Ya existe una solicitud pendiente o en progreso para el empleado ${empId} y ${proceso.nombre}`;
+      showAlert(msg, "error");
       return;
     }
 
@@ -199,7 +263,7 @@ function Solicitar_certificacion() {
       return;
     }
 
-    if (!usuario) {
+    if (!usuarioEmpId || !usuarioNombre) {
       showAlert("No se encontró el usuario en el sistema", "error");
       return;
     }
@@ -209,11 +273,13 @@ function Solicitar_certificacion() {
       empleadoEncontrado.num_empleado ||
       empleadoEncontrado.emp_id ||
       empleadoEncontrado.id;
-    const empNombre =
-      empleadoEncontrado.NOMBRE ||
-      empleadoEncontrado.nombre ||
-      empleadoEncontrado.emp_nombre ||
-      "Sin nombre";
+    const empNombre = [
+      empleadoEncontrado.NOMBRE || empleadoEncontrado.nombre,
+      empleadoEncontrado.APELLIDO1 || empleadoEncontrado.apellido1,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Sin nombre";
 
     // Verificar una última vez antes de guardar
     const verificaciones = await Promise.all(
@@ -223,7 +289,7 @@ function Solicitar_certificacion() {
     );
 
     const procesosDuplicados = procesosSeleccionados.filter(
-      (proceso, index) => verificaciones[index]
+      (proceso, index) => verificaciones[index]?.existe
     );
 
     if (procesosDuplicados.length > 0) {
@@ -242,7 +308,7 @@ function Solicitar_certificacion() {
       id_certificacion: proceso.id,
       nombre_certificacion: proceso.nombre,
       status: "pendiente",
-      solicitado_por: usuario,
+      solicitado_por: usuarioNombre,
     }));
 
     try {
@@ -252,10 +318,7 @@ function Solicitar_certificacion() {
       });
 
       if (response.data.success) {
-        showAlert(
-          response.data.message || "Solicitudes creadas exitosamente",
-          "success"
-        );
+        showAlert("Solicitud Realizada", "success");
         // Limpiar formulario
         setEmpIdInput("");
         setEmpleadoEncontrado(null);
@@ -368,7 +431,7 @@ function Solicitar_certificacion() {
                 fontWeight="bold"
                 gutterBottom
               >
-                Empleado Encontrado:
+                Empleado Encontrado (antigüedad ≥ 30 días)
               </Typography>
               <Typography variant="body1">
                 <strong>Número Empleado:</strong>{" "}
@@ -379,11 +442,19 @@ function Solicitar_certificacion() {
               </Typography>
               <Typography variant="body1">
                 <strong>Nombre:</strong>{" "}
-                {empleadoEncontrado.NOMBRE ||
-                  empleadoEncontrado.nombre ||
-                  empleadoEncontrado.emp_nombre ||
-                  "Sin nombre"}
+                {[
+                  empleadoEncontrado.NOMBRE || empleadoEncontrado.nombre,
+                  empleadoEncontrado.APELLIDO1 || empleadoEncontrado.apellido1,
+                ]
+                  .filter(Boolean)
+                  .join(" ")
+                  .trim() || "Sin nombre"}
               </Typography>
+              {empleadoEncontrado.FECHA_ANTIGUEDAD && (
+                <Typography variant="body2" sx={{ mt: 1, opacity: 0.95 }}>
+                  Antigüedad: {calcularDiasAntiguedad(empleadoEncontrado.FECHA_ANTIGUEDAD || empleadoEncontrado.fecha_antiguedad)} días
+                </Typography>
+              )}
             </Paper>
           )}
 

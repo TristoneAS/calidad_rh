@@ -1,35 +1,57 @@
 import { NextResponse } from "next/server";
-import { conn } from "@/libs/mysql";
+import { connEmpleados } from "@/libs/mysql";
 
-// GET - Obtener empleado por NUM_EMPLEADO o todos los empleados
+// GET - Obtener empleado por emp_id desde BD empleados, tabla del_empleados
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const numEmpleado =
+    const empId =
       searchParams.get("num_empleado") || searchParams.get("emp_id");
 
-    if (numEmpleado) {
-      // Buscar empleado específico por NUM_EMPLEADO
-      const [rows] = await conn.execute(
-        "SELECT NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2, FECHA_NACIMIENTO, SEXO, FECHA_ANTIGUEDAD, CATEGORIA, ID_JEFE, NOMBRE_JEFE FROM empleados WHERE NUM_EMPLEADO = ?",
-        [numEmpleado]
+    if (empId) {
+      // Buscar empleado en BD empleados, tabla del_empleados por emp_id (campo emp_nombre)
+      const [rows] = await connEmpleados.execute(
+        "SELECT emp_id, emp_nombre FROM del_empleados WHERE emp_id = ?",
+        [empId]
       );
 
       if (rows.length === 0) {
-        // Devolver 200 con success: false en lugar de 404 para evitar excepciones de Axios
         return NextResponse.json(
           { success: false, error: "Empleado no encontrado", data: null },
           { status: 200 }
         );
       }
 
-      return NextResponse.json({ success: true, data: rows[0] });
+      const emp = rows[0];
+      const nombreCompleto = emp.emp_nombre || "";
+      return NextResponse.json({
+        success: true,
+        data: {
+          emp_id: emp.emp_id,
+          NUM_EMPLEADO: emp.emp_id,
+          NOMBRE: nombreCompleto,
+          APELLIDO1: "",
+          emp_nombre: nombreCompleto,
+        },
+      });
     } else {
-      // Si no se proporciona NUM_EMPLEADO, retornar todos los empleados con los campos especificados
-      const [rows] = await conn.execute(
-        "SELECT NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2, FECHA_NACIMIENTO, SEXO, FECHA_ANTIGUEDAD, CATEGORIA, ID_JEFE, NOMBRE_JEFE FROM empleados ORDER BY NOMBRE ASC"
+      // Listar todos los empleados de del_empleados
+      const [rows] = await connEmpleados.execute(
+        "SELECT emp_id, emp_nombre FROM del_empleados ORDER BY emp_nombre ASC"
       );
-      return NextResponse.json({ success: true, data: rows });
+      return NextResponse.json({
+        success: true,
+        data: rows.map((emp) => {
+          const nombreCompleto = emp.emp_nombre || "";
+          return {
+            emp_id: emp.emp_id,
+            NUM_EMPLEADO: emp.emp_id,
+            NOMBRE: nombreCompleto,
+            APELLIDO1: "",
+            emp_nombre: nombreCompleto,
+          };
+        }),
+      });
     }
   } catch (error) {
     console.error("Error al obtener empleado:", error);

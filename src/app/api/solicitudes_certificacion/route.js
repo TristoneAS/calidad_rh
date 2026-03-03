@@ -12,16 +12,38 @@ export async function GET(request) {
 
     // Si se solicita verificación de existencia
     if (verificar === "true" && empId && idCertificacion) {
-      // Considerar como "activas" las solicitudes que aún están en flujo
-      // (pendiente, en progreso, entrenamiento_aprobado, examen_aprobado)
-      const [rows] = await conn.execute(
+      // 1. Verificar solicitudes activas (pendiente, en progreso, etc.)
+      const [rowsSolic] = await conn.execute(
         "SELECT * FROM solicitudes_certificacion WHERE emp_id = ? AND id_certificacion = ? AND status IN ('pendiente', 'en progreso', 'entrenamiento_aprobado', 'examen_aprobado')",
         [empId, idCertificacion]
       );
+      if (rowsSolic.length > 0) {
+        return NextResponse.json({
+          success: true,
+          existe: true,
+          motivo: "solicitud_activa",
+          data: rowsSolic[0],
+        });
+      }
+
+      // 2. Verificar si ya tiene certificación vigente (RH asignó, no vencida)
+      const [rowsCert] = await conn.execute(
+        "SELECT * FROM empleados_procesos WHERE emp_id = ? AND id_proceso = ? AND fecha_vencimiento IS NOT NULL AND fecha_vencimiento > CURDATE()",
+        [empId, idCertificacion]
+      );
+      if (rowsCert.length > 0) {
+        return NextResponse.json({
+          success: true,
+          existe: true,
+          motivo: "certificacion_vigente",
+          data: rowsCert[0],
+        });
+      }
+
       return NextResponse.json({
         success: true,
-        existe: rows.length > 0,
-        data: rows.length > 0 ? rows[0] : null,
+        existe: false,
+        data: null,
       });
     }
 
@@ -83,9 +105,9 @@ export async function POST(request) {
       }
     }
 
-    // Insertar todas las solicitudes
-    const insertPromises = solicitudes.map((solicitud) => {
-      return conn.execute(
+    // Insertar cada solicitud y registrar en historial
+    for (const solicitud of solicitudes) {
+      const [result] = await conn.execute(
         "INSERT INTO solicitudes_certificacion (emp_id, emp_nombre, id_certificacion, nombre_certificacion, status, fecha_solicitud, solicitado_por) VALUES (?, ?, ?, ?, ?, NOW(), ?)",
         [
           solicitud.emp_id,
@@ -96,9 +118,12 @@ export async function POST(request) {
           solicitud.solicitado_por || "Sistema",
         ]
       );
-    });
-
-    await Promise.all(insertPromises);
+      const idSolicitud = result.insertId;
+      await conn.execute(
+        "INSERT INTO historial (id_solicitud, empleado, comentario, fecha) VALUES (?, ?, ?, NOW())",
+        [idSolicitud, solicitud.solicitado_por || "Sistema", "solicitud creada"]
+      );
+    }
 
     return NextResponse.json({
       success: true,
