@@ -24,6 +24,11 @@ import {
   MenuItem,
   Grid,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import axios from "axios";
 import AssessmentIcon from "@mui/icons-material/Assessment";
@@ -37,6 +42,7 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import DownloadIcon from "@mui/icons-material/Download";
+import HistoryIcon from "@mui/icons-material/History";
 import * as XLSX from "xlsx";
 
 // Colores profesionales
@@ -79,6 +85,16 @@ function Consultar_matriz_habilidades() {
   const [filtroEdadMin, setFiltroEdadMin] = useState("");
   const [filtroEdadMax, setFiltroEdadMax] = useState("");
   const [filtroCursoProceso, setFiltroCursoProceso] = useState("todos"); // "todos" o ID del curso/proceso
+
+  const [historialDialog, setHistorialDialog] = useState({
+    open: false,
+    empId: null,
+    idProceso: null,
+    nombreProceso: null,
+    nombreEmpleado: null,
+    registros: [],
+    loading: false,
+  });
 
   // Ordenamiento por columna (id del curso o proceso)
   const [columnaOrdenada, setColumnaOrdenada] = useState(null);
@@ -132,6 +148,50 @@ function Consultar_matriz_habilidades() {
     setTimeout(() => {
       setAlert({ show: false, message: "", type: "" });
     }, 5000);
+  };
+
+  const formatearFecha = (f) => {
+    if (!f) return "-";
+    try {
+      const d = new Date(f);
+      return d.toLocaleDateString("es-MX", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return String(f);
+    }
+  };
+
+  const abrirHistorial = async (empId, proceso, empleadoNombre) => {
+    setHistorialDialog({
+      open: true,
+      empId,
+      idProceso: proceso.id,
+      nombreProceso: proceso.nombre,
+      nombreEmpleado: empleadoNombre,
+      registros: [],
+      loading: true,
+    });
+    try {
+      const res = await axios.get("/api/certificaciones", {
+        params: { tipo: "historial", emp_id: empId, id_proceso: proceso.id },
+      });
+      const registros = res.data?.data ?? [];
+      setHistorialDialog((prev) => ({
+        ...prev,
+        registros,
+        loading: false,
+      }));
+    } catch (err) {
+      console.error("Error al cargar historial:", err);
+      setHistorialDialog((prev) => ({
+        ...prev,
+        registros: [],
+        loading: false,
+      }));
+    }
   };
 
   const handleTabChange = (event, newValue) => {
@@ -955,22 +1015,35 @@ function Consultar_matriz_habilidades() {
                             const estado = estadoProceso(empleado.emp_id, proceso.id);
                             return (
                               <TableCell key={proceso.id} align="center">
-                                {estado === "vigente" ? (
-                                  <CheckCircleIcon
-                                    sx={{ color: "#10B981", fontSize: 28 }}
-                                    titleAccess="Certificación vigente"
-                                  />
-                                ) : estado === "vencida" ? (
-                                  <WarningAmberIcon
-                                    sx={{ color: "#F59E0B", fontSize: 28 }}
-                                    titleAccess="Certificación vencida"
-                                  />
-                                ) : (
-                                  <CancelIcon
-                                    sx={{ color: "#EF4444", fontSize: 28 }}
-                                    titleAccess="Sin certificación"
-                                  />
-                                )}
+                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+                                  {estado === "vigente" ? (
+                                    <CheckCircleIcon
+                                      sx={{ color: "#10B981", fontSize: 28 }}
+                                      titleAccess="Certificación vigente"
+                                    />
+                                  ) : estado === "vencida" ? (
+                                    <WarningAmberIcon
+                                      sx={{ color: "#F59E0B", fontSize: 28 }}
+                                      titleAccess="Certificación vencida"
+                                    />
+                                  ) : (
+                                    <CancelIcon
+                                      sx={{ color: "#EF4444", fontSize: 28 }}
+                                      titleAccess="Sin certificación"
+                                    />
+                                  )}
+                                  {(estado === "vigente" || estado === "vencida") && (
+                                    <Tooltip title="Ver historial de certificaciones">
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => abrirHistorial(empleado.emp_id, proceso, empleado.nombreCompleto || empleado.nombre)}
+                                        sx={{ p: 0.25 }}
+                                      >
+                                        <HistoryIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                </Box>
                               </TableCell>
                             );
                           })}
@@ -984,6 +1057,47 @@ function Consultar_matriz_habilidades() {
           </TabPanel>
         </CardContent>
       </Card>
+
+      <Dialog open={historialDialog.open} onClose={() => setHistorialDialog((p) => ({ ...p, open: false }))} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Historial de certificaciones
+          {historialDialog.nombreEmpleado && historialDialog.nombreProceso && (
+            <Typography variant="body2" color="text.secondary" fontWeight="normal">
+              {historialDialog.nombreEmpleado} • {historialDialog.nombreProceso}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          {historialDialog.loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+              <CircularProgress size={32} />
+            </Box>
+          ) : historialDialog.registros.length === 0 ? (
+            <Typography color="text.secondary">Sin registros de certificación</Typography>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Fecha certificación</TableCell>
+                    <TableCell>Vencimiento</TableCell>
+                    <TableCell>Tipo</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {historialDialog.registros.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>{formatearFecha(r.fecha_certificacion)}</TableCell>
+                      <TableCell>{formatearFecha(r.fecha_vencimiento)}</TableCell>
+                      <TableCell>{r.tipo || "nueva"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

@@ -280,7 +280,6 @@ function Certificaciones_vigencia() {
                     {porVencer.map((c) => {
                       const empId = c.emp_id ?? c.empId;
                       const idProceso = c.id_proceso ?? c.idProceso;
-                      const tieneSolicitud = tieneSolicitudPendiente(empId, idProceso);
                       return (
                       <TableRow key={`${empId}-${idProceso}-${c.fecha}`}>
                         <TableCell>{c.emp_nombre}</TableCell>
@@ -295,20 +294,6 @@ function Certificaciones_vigencia() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Tooltip title={tieneSolicitud ? "Ya se mandó a renovación" : ""}>
-                            <span>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                startIcon={<AddCircleOutlineIcon />}
-                                onClick={() => abrirRenovar(c)}
-                                disabled={tieneSolicitud}
-                                sx={{ mr: 1 }}
-                              >
-                                Renovar
-                              </Button>
-                            </span>
-                          </Tooltip>
                           <Button
                             size="small"
                             startIcon={<HistoryIcon />}
