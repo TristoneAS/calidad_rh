@@ -23,6 +23,7 @@ import {
   Select,
   MenuItem,
   Grid,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,7 +31,6 @@ import {
   Tooltip,
 } from "@mui/material";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import SchoolIcon from "@mui/icons-material/School";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
@@ -729,7 +729,7 @@ function Consultar_matriz_habilidades() {
                     <SchoolIcon sx={{ mr: 1, fontSize: 24 }} />
                     Matriz de Cursos
                   </Typography>
-                  <SafeButton
+                  <Button
                     variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={descargarExcel}
@@ -739,7 +739,7 @@ function Consultar_matriz_habilidades() {
                     }}
                   >
                     Descargar Excel
-                  </SafeButton>
+                  </Button>
                 </Box>
 
                 <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
@@ -895,7 +895,7 @@ function Consultar_matriz_habilidades() {
                       ✓ Vigente | ! Vencida | ✗ Sin certificación
                     </Typography>
                   </Box>
-                  <SafeButton
+                  <Button
                     variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={descargarExcel}
@@ -905,7 +905,7 @@ function Consultar_matriz_habilidades() {
                     }}
                   >
                     Descargar Excel
-                  </SafeButton>
+                  </Button>
                 </Box>
 
                 <TableContainer component={Paper} sx={{ maxHeight: 600 }}>

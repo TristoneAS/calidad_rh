@@ -16,10 +16,10 @@ import {
   DialogActions,
   TextField,
   Tooltip,
+  Button,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import PendingIcon from "@mui/icons-material/Pending";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
@@ -70,6 +70,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
     registros: [],
     loading: false,
   });
+  const [filtroEmpId, setFiltroEmpId] = useState("");
 
   useEffect(() => {
     fetchSolicitudes();
@@ -196,6 +197,19 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
     ].includes(st);
   });
 
+  // Aplicar filtro por emp_id a las listas
+  const filtrarPorEmpId = (lista) => {
+    if (!filtroEmpId.trim()) return lista;
+    const termino = String(filtroEmpId).trim().toLowerCase();
+    return lista.filter(
+      (s) =>
+        String(s.emp_id || "").toLowerCase().includes(termino)
+    );
+  };
+  const pendientesFiltrados = filtrarPorEmpId(solicitudesPendientes);
+  const enProgresoFiltrados = filtrarPorEmpId(solicitudesEnProgreso);
+  const finalizadasFiltradas = filtrarPorEmpId(solicitudesFinalizadas);
+
   const actualizarEstadoSolicitud = async (id, nuevoStatus) => {
     try {
       await axios.put("/api/solicitudes_certificacion", {
@@ -295,10 +309,13 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
       const response = await axios.get(
         `/api/empleados_procesos?verificar=true&emp_id=${empId}&id_proceso=${idProceso}`,
       );
-      return response.data.existe || false;
+      return {
+        existe: response.data.existe || false,
+        data: response.data.data || null,
+      };
     } catch (error) {
       console.error("Error al verificar enrolamiento de proceso:", error);
-      return false;
+      return { existe: false, data: null };
     }
   };
 
@@ -319,18 +336,27 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
 
     try {
       // Verificar si ya existe enrolamiento
-      const yaExiste = await verificarEnrolamientoProceso(empId, idProceso);
-      if (yaExiste) {
-        showAlert(
-          "El empleado ya tiene asignado este proceso. No se creó otra certificación.",
-          "warning",
-        );
-      } else {
-        const hoy = new Date();
-        const vencimiento = new Date(hoy);
-        vencimiento.setMonth(vencimiento.getMonth() + 6);
-        const fechaVencimiento = vencimiento.toISOString().split("T")[0];
+      const { existe: yaExiste, data: enrolamientoExistente } =
+        await verificarEnrolamientoProceso(empId, idProceso);
+      const hoy = new Date();
+      const vencimiento = new Date(hoy);
+      vencimiento.setMonth(vencimiento.getMonth() + 6);
+      const fechaVencimiento = vencimiento.toISOString().split("T")[0];
 
+      if (yaExiste) {
+        // Renovación: actualizar vigencia en el mismo enrolamiento
+        await axios.put("/api/empleados_procesos", {
+          emp_id: empId,
+          id_proceso: idProceso,
+          emp_nombre: empNombre,
+          nombre_proceso: nombreProceso,
+          descripcion_proceso: "",
+          enrolado_por: usuarioNombre || "RH - Flujo certificación",
+          es_certificacion: true,
+          fecha_vencimiento: fechaVencimiento,
+        });
+      } else {
+        // Primera asignación: crear enrolamiento
         const enrolamientos = [
           {
             emp_id: empId,
@@ -345,30 +371,34 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
         ];
 
         await axios.post("/api/empleados_procesos", { enrolamientos });
-
-        // Verificar si es renovación (había cert vencida)
-        let esRenovacion = false;
-        try {
-          const resHist = await axios.get(
-            `/api/certificaciones?tipo=historial&emp_id=${empId}&id_proceso=${idProceso}`
-          );
-          if (resHist.data.success && resHist.data.data?.length > 0) {
-            esRenovacion = true;
-          }
-        } catch (_) {}
-
-        // Registrar en historial de certificaciones (caducidad 6 meses)
-        await axios.post("/api/certificaciones", {
-          emp_id: empId,
-          emp_nombre: empNombre,
-          id_proceso: idProceso,
-          nombre_proceso: nombreProceso,
-          fecha_vencimiento: fechaVencimiento,
-          id_solicitud: solicitud.id,
-          tipo: esRenovacion ? "renovacion" : "nueva",
-          certificado_por: usuarioNombre || "RH",
-        });
       }
+
+      // Verificar si es renovación (ya tenía historial previo)
+      let esRenovacion = false;
+      let renovacionDeId = null;
+      try {
+        const resHist = await axios.get(
+          `/api/certificaciones?tipo=historial&emp_id=${empId}&id_proceso=${idProceso}`
+        );
+        if (resHist.data.success && Array.isArray(resHist.data.data) && resHist.data.data.length > 0) {
+          esRenovacion = true;
+          renovacionDeId = resHist.data.data[0]?.id || null;
+        }
+      } catch (_) {}
+
+      // Registrar SIEMPRE en historial de certificaciones (nueva o renovación)
+      await axios.post("/api/certificaciones", {
+        emp_id: empId,
+        emp_nombre: empNombre,
+        id_proceso: idProceso,
+        nombre_proceso: nombreProceso,
+        fecha_vencimiento: fechaVencimiento,
+        id_solicitud: solicitud.id,
+        id_enrolamiento: enrolamientoExistente?.id || null,
+        tipo: esRenovacion || yaExiste ? "renovacion" : "nueva",
+        renovacion_de_id: renovacionDeId,
+        certificado_por: usuarioNombre || "RH",
+      });
 
       // Actualizar estado de la solicitud a certificacion_asignada
       await actualizarEstadoSolicitud(solicitud.id, "certificacion_asignada");
@@ -536,7 +566,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
       sortable: false,
       renderCell: (params) => (
         <Tooltip title="Ver historial">
-          <SafeButton
+          <Button
             variant="outlined"
             size="small"
             startIcon={<HistoryIcon />}
@@ -548,7 +578,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
             }}
           >
             Ver
-          </SafeButton>
+          </Button>
         </Tooltip>
       ),
     },
@@ -570,7 +600,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           const disabled = esModoCalidad || esModoRhCert;
           return (
             <Box sx={{ display: "flex", gap: 1 }}>
-              <SafeButton
+              <Button
                 variant="contained"
                 size="small"
                 color="success"
@@ -585,8 +615,8 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Entr. ok
-              </SafeButton>
-              <SafeButton
+              </Button>
+              <Button
                 variant="outlined"
                 size="small"
                 color="error"
@@ -601,7 +631,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Entr. no
-              </SafeButton>
+              </Button>
             </Box>
           );
         }
@@ -611,7 +641,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           const disabled = esModoRhEntr || esModoRhCert;
           return (
             <Box sx={{ display: "flex", gap: 1 }}>
-              <SafeButton
+              <Button
                 variant="contained"
                 size="small"
                 color="primary"
@@ -626,8 +656,8 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Aud. ok
-              </SafeButton>
-              <SafeButton
+              </Button>
+              <Button
                 variant="outlined"
                 size="small"
                 color="error"
@@ -642,7 +672,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
                 }
               >
                 Aud. no
-              </SafeButton>
+              </Button>
             </Box>
           );
         }
@@ -651,7 +681,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           // Paso RH: asignar certificación (crea enrolamiento y cierra flujo)
           const disabled = esModoCalidad || esModoRhEntr;
           return (
-            <SafeButton
+            <Button
               variant="contained"
               size="small"
               color="success"
@@ -666,7 +696,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
               }
             >
               Asignar cert.
-            </SafeButton>
+            </Button>
           );
         }
 
@@ -720,6 +750,23 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
             </Alert>
           )}
 
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3, flexWrap: "wrap" }}>
+            <TextField
+              label="Filtrar por ID empleado"
+              placeholder="Ej: 12345"
+              value={filtroEmpId}
+              onChange={(e) => setFiltroEmpId(e.target.value)}
+              size="small"
+              sx={{ minWidth: 220 }}
+              inputProps={{ "aria-label": "Filtrar por ID de empleado" }}
+            />
+            {filtroEmpId.trim() && (
+              <Typography variant="body2" color="text.secondary">
+                Mostrando registros que coinciden con &quot;{filtroEmpId.trim()}&quot;
+              </Typography>
+            )}
+          </Box>
+
           {/* Tabs */}
           <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
             <Tabs
@@ -745,17 +792,17 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
               <Tab
                 icon={<PendingIcon sx={{ mb: 0.5 }} />}
                 iconPosition="start"
-                label={`Pendientes (${solicitudesPendientes.length})`}
+                label={`Pendientes (${pendientesFiltrados.length}${filtroEmpId.trim() ? `/${solicitudesPendientes.length}` : ""})`}
               />
               <Tab
                 icon={<HourglassEmptyIcon sx={{ mb: 0.5 }} />}
                 iconPosition="start"
-                label={`En Progreso (${solicitudesEnProgreso.length})`}
+                label={`En Progreso (${enProgresoFiltrados.length}${filtroEmpId.trim() ? `/${solicitudesEnProgreso.length}` : ""})`}
               />
               <Tab
                 icon={<CheckCircleIcon sx={{ mb: 0.5 }} />}
                 iconPosition="start"
-                label={`Finalizadas (${solicitudesFinalizadas.length})`}
+                label={`Finalizadas (${finalizadasFiltradas.length}${filtroEmpId.trim() ? `/${solicitudesFinalizadas.length}` : ""})`}
               />
             </Tabs>
           </Box>
@@ -785,7 +832,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
 
                 <Box sx={{ height: 600, width: "100%" }}>
                   <DataGrid
-                    rows={solicitudesPendientes}
+                    rows={pendientesFiltrados}
                     columns={columnsToShow}
                     getRowId={(row) => row.id}
                     pageSizeOptions={[10, 25, 50, 100]}
@@ -842,7 +889,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
 
                 <Box sx={{ height: 600, width: "100%" }}>
                   <DataGrid
-                    rows={solicitudesEnProgreso}
+                    rows={enProgresoFiltrados}
                     columns={columnsToShow}
                     getRowId={(row) => row.id}
                     pageSizeOptions={[10, 25, 50, 100]}
@@ -899,7 +946,7 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
 
                 <Box sx={{ height: 600, width: "100%" }}>
                   <DataGrid
-                    rows={solicitudesFinalizadas}
+                    rows={finalizadasFiltradas}
                     columns={columnsToShow}
                     getRowId={(row) => row.id}
                     pageSizeOptions={[10, 25, 50, 100]}
@@ -959,16 +1006,16 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <SafeButton onClick={cerrarDialogComentario} color="inherit">
+          <Button onClick={cerrarDialogComentario} color="inherit">
             Cancelar
-          </SafeButton>
-          <SafeButton
+          </Button>
+          <Button
             onClick={confirmarComentario}
             variant="contained"
             color="primary"
           >
             Guardar y continuar
-          </SafeButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1036,9 +1083,9 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <SafeButton onClick={cerrarHistorial} variant="contained">
+          <Button onClick={cerrarHistorial} variant="contained">
             Cerrar
-          </SafeButton>
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

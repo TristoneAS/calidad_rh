@@ -16,10 +16,10 @@ import {
   DialogActions,
   IconButton,
   Tooltip,
+  Button,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import PeopleIcon from "@mui/icons-material/People";
 import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
@@ -362,7 +362,7 @@ function Lideres_calidad() {
               />
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                <SafeButton
+                <Button
                   type="submit"
                   variant="contained"
                   startIcon={
@@ -385,7 +385,7 @@ function Lideres_calidad() {
                   }}
                 >
                   {loading ? "Guardando..." : "Agregar Líder"}
-                </SafeButton>
+                </Button>
               </Box>
             </Box>
           </form>
@@ -480,13 +480,13 @@ function Lideres_calidad() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <SafeButton
+          <Button
             onClick={() => setEditDialog({ open: false, lider: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </SafeButton>
-          <SafeButton
+          </Button>
+          <Button
             onClick={handleUpdate}
             variant="contained"
             disabled={loading}
@@ -496,7 +496,7 @@ function Lideres_calidad() {
             }}
           >
             {loading ? "Guardando..." : "Guardar Cambios"}
-          </SafeButton>
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

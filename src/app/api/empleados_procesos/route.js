@@ -92,3 +92,62 @@ export async function POST(request) {
     );
   }
 }
+
+// PUT - Actualizar enrolamiento existente (por ejemplo, renovación de certificación)
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const {
+      emp_id,
+      id_proceso,
+      emp_nombre,
+      nombre_proceso,
+      descripcion_proceso,
+      enrolado_por,
+      es_certificacion,
+      fecha_vencimiento,
+    } = body;
+
+    if (!emp_id || !id_proceso) {
+      return NextResponse.json(
+        { success: false, error: "emp_id e id_proceso son requeridos" },
+        { status: 400 }
+      );
+    }
+
+    const esCert = es_certificacion ? 1 : 0;
+    const fechaVenc = fecha_vencimiento || null;
+
+    await conn.execute(
+      `UPDATE empleados_procesos
+       SET emp_nombre = COALESCE(?, emp_nombre),
+           nombre_proceso = COALESCE(?, nombre_proceso),
+           descripcion_proceso = COALESCE(?, descripcion_proceso),
+           enrolado_por = COALESCE(?, enrolado_por),
+           es_certificacion = ?,
+           fecha_vencimiento = ?
+       WHERE emp_id = ? AND id_proceso = ?`,
+      [
+        emp_nombre || null,
+        nombre_proceso || null,
+        descripcion_proceso || null,
+        enrolado_por || null,
+        esCert,
+        fechaVenc,
+        emp_id,
+        id_proceso,
+      ]
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: "Enrolamiento actualizado correctamente",
+    });
+  } catch (error) {
+    console.error("Error al actualizar enrolamiento:", error);
+    return NextResponse.json(
+      { success: false, error: "Error al actualizar el enrolamiento" },
+      { status: 500 }
+    );
+  }
+}

@@ -18,9 +18,9 @@ import {
   ListItemSecondaryAction,
   IconButton,
   TextField,
+  Button,
 } from "@mui/material";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import PersonIcon from "@mui/icons-material/Person";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -401,7 +401,7 @@ function Solicitar_certificacion() {
               }}
               placeholder="Ingresa el ID del empleado"
             />
-            <SafeButton
+            <Button
               variant="contained"
               onClick={buscarEmpleado}
               disabled={loadingEmpleado}
@@ -419,7 +419,7 @@ function Solicitar_certificacion() {
               }}
             >
               {loadingEmpleado ? "Buscando..." : "Buscar"}
-            </SafeButton>
+            </Button>
           </Box>
 
           {empleadoEncontrado && (
@@ -499,7 +499,7 @@ function Solicitar_certificacion() {
                       })}
                   </Select>
                 </FormControl>
-                <SafeButton
+                <Button
                   variant="contained"
                   onClick={handleAgregarProceso}
                   sx={{
@@ -509,7 +509,7 @@ function Solicitar_certificacion() {
                   }}
                 >
                   Agregar
-                </SafeButton>
+                </Button>
               </Box>
 
               {procesosSeleccionados.length > 0 && (
@@ -566,7 +566,7 @@ function Solicitar_certificacion() {
 
           {/* Botón de guardar */}
           <Box display="flex" justifyContent="flex-end" mt={4}>
-            <SafeButton
+            <Button
               variant="contained"
               size="large"
               onClick={handleGuardar}
@@ -581,7 +581,7 @@ function Solicitar_certificacion() {
               }}
             >
               {loading ? "Guardando..." : "Guardar Solicitudes"}
-            </SafeButton>
+            </Button>
           </Box>
         </CardContent>
       </Card>

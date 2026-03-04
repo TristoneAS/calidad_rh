@@ -19,10 +19,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Button,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
@@ -437,7 +437,7 @@ function Alta_procesos() {
               </FormControl>
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                <SafeButton
+                <Button
                   type="submit"
                   variant="contained"
                   startIcon={
@@ -462,7 +462,7 @@ function Alta_procesos() {
                   }}
                 >
                   {loading ? "Guardando..." : "Guardar Proceso"}
-                </SafeButton>
+                </Button>
               </Box>
             </Box>
           </form>
@@ -569,13 +569,13 @@ function Alta_procesos() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <SafeButton
+          <Button
             onClick={() => setEditDialog({ open: false, proceso: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </SafeButton>
-          <SafeButton
+          </Button>
+          <Button
             onClick={handleUpdate}
             variant="contained"
             disabled={loading}
@@ -587,7 +587,7 @@ function Alta_procesos() {
             }}
           >
             {loading ? "Guardando..." : "Guardar Cambios"}
-          </SafeButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -606,13 +606,13 @@ function Alta_procesos() {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <SafeButton
+          <Button
             onClick={() => setDeleteDialog({ open: false, id: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </SafeButton>
-          <SafeButton
+          </Button>
+          <Button
             onClick={handleDeleteConfirm}
             variant="contained"
             disabled={loading}
@@ -624,7 +624,7 @@ function Alta_procesos() {
             }}
           >
             {loading ? "Eliminando..." : "Eliminar"}
-          </SafeButton>
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

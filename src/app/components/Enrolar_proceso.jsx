@@ -21,9 +21,9 @@ import {
   IconButton,
   Divider,
   TextField,
+  Button,
 } from "@mui/material";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import PersonIcon from "@mui/icons-material/Person";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -421,6 +421,25 @@ function Enrolar_proceso() {
       });
 
       if (response.data.success) {
+        // Registrar en certificaciones_historial solo los que son certificación (6 meses vigencia)
+        const certificadosPor = enroladoPor || "Sistema";
+        for (const e of enrolamientos) {
+          if (e.es_certificacion && e.fecha_vencimiento) {
+            try {
+              await axios.post("/api/certificaciones", {
+                emp_id: e.emp_id,
+                emp_nombre: e.emp_nombre,
+                id_proceso: e.id_proceso,
+                nombre_proceso: e.nombre_proceso,
+                fecha_vencimiento: e.fecha_vencimiento,
+                tipo: "nueva",
+                certificado_por: certificadosPor,
+              });
+            } catch (errHist) {
+              console.error("Error al registrar en historial:", errHist);
+            }
+          }
+        }
         showAlert(
           response.data.message || "Enrolamientos creados exitosamente",
           "success"
@@ -539,7 +558,7 @@ function Enrolar_proceso() {
                   }}
                   placeholder="Ingresa el ID del empleado"
                 />
-                <SafeButton
+                <Button
                   variant="contained"
                   onClick={buscarEmpleado}
                   disabled={loadingEmpleado}
@@ -557,7 +576,7 @@ function Enrolar_proceso() {
                   }}
                 >
                   {loadingEmpleado ? "Buscando..." : "Buscar"}
-                </SafeButton>
+                </Button>
               </Box>
 
               {empleadoEncontrado && (
@@ -620,7 +639,7 @@ function Enrolar_proceso() {
                         })}
                       </Select>
                     </FormControl>
-                    <SafeButton
+                    <Button
                       variant="contained"
                       onClick={handleAgregarProceso}
                       sx={{
@@ -630,7 +649,7 @@ function Enrolar_proceso() {
                       }}
                     >
                       Agregar
-                    </SafeButton>
+                    </Button>
                   </Box>
 
                   {procesosSeleccionados.length > 0 && (
@@ -711,7 +730,7 @@ function Enrolar_proceso() {
                       }}
                       placeholder="Ingresa el ID del empleado"
                     />
-                    <SafeButton
+                    <Button
                       variant="contained"
                       onClick={buscarEmpleado}
                       disabled={loadingEmpleado}
@@ -729,7 +748,7 @@ function Enrolar_proceso() {
                       }}
                     >
                       {loadingEmpleado ? "Buscando..." : "Buscar"}
-                    </SafeButton>
+                    </Button>
                   </Box>
 
                   {empleadoEncontrado && (
@@ -758,7 +777,7 @@ function Enrolar_proceso() {
                           empleadoEncontrado.nombre ||
                           "Sin nombre"}
                       </Typography>
-                      <SafeButton
+                      <Button
                         variant="contained"
                         onClick={handleAgregarEmpleado}
                         sx={{
@@ -768,7 +787,7 @@ function Enrolar_proceso() {
                         }}
                       >
                         Agregar Empleado
-                      </SafeButton>
+                      </Button>
                     </Paper>
                   )}
 
@@ -810,7 +829,7 @@ function Enrolar_proceso() {
 
           {/* Botón de guardar */}
           <Box display="flex" justifyContent="flex-end" mt={4}>
-            <SafeButton
+            <Button
               variant="contained"
               size="large"
               onClick={handleGuardar}
@@ -825,7 +844,7 @@ function Enrolar_proceso() {
               }}
             >
               {loading ? "Guardando..." : "Guardar Enrolamientos"}
-            </SafeButton>
+            </Button>
           </Box>
         </CardContent>
       </Card>

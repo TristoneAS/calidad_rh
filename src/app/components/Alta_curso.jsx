@@ -15,10 +15,10 @@ import {
   Tooltip,
   CircularProgress,
   alpha,
+  Button,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
@@ -105,7 +105,7 @@ function Alta_curso() {
     }
 
     if (!usuario) {
-      showAlert("No se encontró el usuario en el sistema", "error");
+      showAlert("No se encontr? el usuario en el sistema", "error");
       return;
     }
 
@@ -230,7 +230,7 @@ function Alta_curso() {
     },
     {
       field: "descripcion",
-      headerName: "Descripción",
+      headerName: "Descripci?n",
       flex: 1,
       minWidth: 250,
     },
@@ -350,7 +350,7 @@ function Alta_curso() {
               />
 
               <TextField
-                label="Descripción"
+                label="Descripci?n"
                 name="descripcion"
                 value={formData.descripcion}
                 onChange={handleInputChange}
@@ -372,7 +372,7 @@ function Alta_curso() {
               />
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                <SafeButton
+                <Button
                   type="submit"
                   variant="contained"
                   startIcon={
@@ -397,7 +397,7 @@ function Alta_curso() {
                   }}
                 >
                   {loading ? "Guardando..." : "Guardar Curso"}
-                </SafeButton>
+                </Button>
               </Box>
             </Box>
           </form>
@@ -457,7 +457,7 @@ function Alta_curso() {
         </CardContent>
       </Card>
 
-      {/* Diálogo de Edición */}
+      {/* Di?logo de Edici?n */}
       <Dialog
         open={editDialog.open}
         onClose={() => setEditDialog({ open: false, curso: null })}
@@ -479,7 +479,7 @@ function Alta_curso() {
               variant="outlined"
             />
             <TextField
-              label="Descripción"
+              label="Descripci?n"
               name="descripcion"
               value={editDialog.curso?.descripcion || ""}
               onChange={handleEditChange}
@@ -492,13 +492,13 @@ function Alta_curso() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <SafeButton
+          <Button
             onClick={() => setEditDialog({ open: false, curso: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </SafeButton>
-          <SafeButton
+          </Button>
+          <Button
             onClick={handleUpdate}
             variant="contained"
             disabled={loading}
@@ -510,32 +510,32 @@ function Alta_curso() {
             }}
           >
             {loading ? "Guardando..." : "Guardar Cambios"}
-          </SafeButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Diálogo de Confirmación de Eliminación */}
+      {/* Di?logo de Confirmaci?n de Eliminaci?n */}
       <Dialog
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, id: null })}
       >
         <DialogTitle sx={{ color: colors.secondary.dark, fontWeight: 600 }}>
-          Confirmar Eliminación
+          Confirmar Eliminaci?n
         </DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Estás seguro de que deseas eliminar este curso? Esta acción no se
+            ?Est?s seguro de que deseas eliminar este curso? Esta acci?n no se
             puede deshacer.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <SafeButton
+          <Button
             onClick={() => setDeleteDialog({ open: false, id: null })}
             sx={{ color: "text.secondary" }}
           >
             Cancelar
-          </SafeButton>
-          <SafeButton
+          </Button>
+          <Button
             onClick={handleDeleteConfirm}
             variant="contained"
             disabled={loading}
@@ -547,7 +547,7 @@ function Alta_curso() {
             }}
           >
             {loading ? "Eliminando..." : "Eliminar"}
-          </SafeButton>
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

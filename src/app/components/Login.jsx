@@ -12,11 +12,11 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Button,
 } from "@mui/material";
 import { Visibility, VisibilityOff, Person, Lock } from "@mui/icons-material";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import SafeButton from "@/app/components/common/SafeButton";
 
 function Login() {
   const router = useRouter();
@@ -309,7 +309,7 @@ function Login() {
               }}
             />
 
-            <SafeButton
+            <Button
               type="submit"
               fullWidth
               variant="contained"
@@ -345,7 +345,7 @@ function Login() {
               ) : (
                 "Iniciar Sesión"
               )}
-            </SafeButton>
+            </Button>
           </Box>
 
           <Snackbar

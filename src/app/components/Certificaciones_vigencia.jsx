@@ -24,9 +24,9 @@ import {
   DialogActions,
   Chip,
   Tooltip,
+  Button,
 } from "@mui/material";
 import axios from "axios";
-import SafeButton from "@/app/components/common/SafeButton";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import EventBusyIcon from "@mui/icons-material/EventBusy";
 import HistoryIcon from "@mui/icons-material/History";
@@ -222,14 +222,14 @@ function Certificaciones_vigencia() {
             <Typography variant="h4" fontWeight="bold">
               Certificaciones - Vigencia y Renovación
             </Typography>
-            <SafeButton
+            <Button
               startIcon={<RefreshIcon />}
               onClick={fetchDatos}
               size="small"
               sx={{ ml: "auto" }}
             >
               Actualizar
-            </SafeButton>
+            </Button>
           </Box>
 
           {alert.show && (
@@ -304,13 +304,13 @@ function Certificaciones_vigencia() {
                           />
                         </TableCell>
                         <TableCell>
-                          <SafeButton
+                          <Button
                             size="small"
                             startIcon={<HistoryIcon />}
                             onClick={() => abrirHistorial(empId, idProceso)}
                           >
                             Historial
-                          </SafeButton>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );})}
@@ -363,7 +363,7 @@ function Certificaciones_vigencia() {
                         <TableCell>
                           <Tooltip title={tieneSolicitud ? "Ya se mandó a renovación" : ""}>
                             <span>
-                              <SafeButton
+                              <Button
                                 size="small"
                                 variant="contained"
                                 startIcon={<AddCircleOutlineIcon />}
@@ -372,16 +372,16 @@ function Certificaciones_vigencia() {
                                 sx={{ mr: 1 }}
                               >
                                 Renovar
-                              </SafeButton>
+                              </Button>
                             </span>
                           </Tooltip>
-                          <SafeButton
+                          <Button
                             size="small"
                             startIcon={<HistoryIcon />}
                             onClick={() => abrirHistorial(empId, idProceso)}
                           >
                             Historial
-                          </SafeButton>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );})}
@@ -453,13 +453,13 @@ function Certificaciones_vigencia() {
           )}
         </DialogContent>
         <DialogActions>
-          <SafeButton onClick={() => setRenovarDialog({ open: false, certificacion: null })}>
+          <Button onClick={() => setRenovarDialog({ open: false, certificacion: null })}>
             {renovarDialog.yaEnviada ? "Cerrar" : "Cancelar"}
-          </SafeButton>
+          </Button>
           {!renovarDialog.yaEnviada && (
-            <SafeButton variant="contained" onClick={confirmarRenovar} disabled={renovarDialog.loading}>
+            <Button variant="contained" onClick={confirmarRenovar} disabled={renovarDialog.loading}>
               {renovarDialog.loading ? "Creando..." : "Crear solicitud de renovación"}
-            </SafeButton>
+            </Button>
           )}
         </DialogActions>
       </Dialog>
