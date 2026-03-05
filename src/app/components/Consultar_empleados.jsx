@@ -49,9 +49,8 @@ function Consultar_empleados() {
   const fetchEmpleados = async () => {
     try {
       setLoading(true);
-      // Obtener todos los empleados - necesitamos crear un endpoint que traiga todos
-      // Por ahora usaremos el endpoint existente pero necesitamos modificarlo
-      const response = await axios.get("/api/empleados");
+      // Usar empleados_matriz para obtener datos completos (tabla empleados en PDC)
+      const response = await axios.get("/api/empleados_matriz");
       if (response.data.success) {
         // Si viene un array, usarlo; si viene un objeto, convertirlo a array
         const data = Array.isArray(response.data.data)

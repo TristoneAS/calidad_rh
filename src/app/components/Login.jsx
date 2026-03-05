@@ -117,7 +117,7 @@ function Login() {
         localStorage.setItem("usuario", username);
         // Crear cookie de sesión y guardar el timestamp de expiración
         try {
-          const expiresAt = Date.now() + 30 * 60 * 1000;
+          const expiresAt = Date.now() + 90 * 60 * 1000;
           localStorage.setItem("sessionExpiresAt", expiresAt.toString());
           const expires = new Date(expiresAt).toUTCString();
           document.cookie = `pdc_session=authenticated; expires=${expires}; path=/; SameSite=Lax`;

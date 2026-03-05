@@ -33,6 +33,8 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import BusinessIcon from "@mui/icons-material/Business";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import HistoryIcon from "@mui/icons-material/History";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 
@@ -788,7 +790,240 @@ const App = ({ children }) => {
                 </AccordionDetails>
               </Accordion>
 
-              {/* RH - Certificaciones (eliminado, ahora se maneja con procesos certificables) */}
+              {/* RH - Empleados */}
+              <Accordion
+                expanded={expanded === "RH-Empleados"}
+                onChange={handleChange("RH-Empleados")}
+                sx={{
+                  boxShadow: "none",
+                  "&:before": { display: "none" },
+                  border: `1px solid ${alpha(colors.secondary.main, 0.15)}`,
+                  borderRadius: 2,
+                  mb: 1,
+                  "&.Mui-expanded": {
+                    bgcolor: alpha(colors.secondary.main, 0.05),
+                  },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={
+                    <ExpandMoreIcon sx={{ color: colors.secondary.dark }} />
+                  }
+                  sx={{
+                    "&:hover": {
+                      bgcolor: alpha(colors.secondary.main, 0.08),
+                    },
+                    borderRadius: 2,
+                  }}
+                >
+                  <PeopleIcon
+                    sx={{
+                      mr: isSmallScreen ? 1 : 1.5,
+                      color: colors.secondary.dark,
+                      fontSize: isSmallScreen ? 18 : 22,
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
+                    }}
+                  >
+                    Empleados
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                  <List disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/empleados/cargar_empleados");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mb: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <UploadFileIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Cargar (Excel/CSV)"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  </List>
+                </AccordionDetails>
+              </Accordion>
+
+              {/* RH - Exámenes */}
+              <Accordion
+                expanded={expanded === "RH-Examenes"}
+                onChange={handleChange("RH-Examenes")}
+                sx={{
+                  boxShadow: "none",
+                  "&:before": { display: "none" },
+                  border: `1px solid ${alpha(colors.secondary.main, 0.15)}`,
+                  borderRadius: 2,
+                  mb: 1,
+                  "&.Mui-expanded": {
+                    bgcolor: alpha(colors.secondary.main, 0.05),
+                  },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={
+                    <ExpandMoreIcon sx={{ color: colors.secondary.dark }} />
+                  }
+                  sx={{
+                    "&:hover": {
+                      bgcolor: alpha(colors.secondary.main, 0.08),
+                    },
+                    borderRadius: 2,
+                  }}
+                >
+                  <AssessmentIcon
+                    sx={{
+                      mr: isSmallScreen ? 1 : 1.5,
+                      color: colors.secondary.dark,
+                      fontSize: isSmallScreen ? 18 : 22,
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: isSmallScreen ? "0.75rem" : "0.9rem",
+                    }}
+                  >
+                    Exámenes
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                  <List disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/examenes/alta_examenes");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mb: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <AddCircleOutlineIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Alta"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/examenes/baja_examenes");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <RemoveCircleOutlineIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Baja"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/examenes/aplicar_examen");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mt: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <SchoolIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Aplicar"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/examenes/historial_examenes");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mt: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <HistoryIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.secondary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Historial"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  </List>
+                </AccordionDetails>
+              </Accordion>
 
               {/* RH - Procesos */}
               <Accordion
