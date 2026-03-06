@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Card,
@@ -42,6 +43,7 @@ const colors = {
 };
 
 function Solicitar_certificacion() {
+  const router = useRouter();
   const [procesosCertificables, setProcesosCertificables] = useState([]);
   const [empIdInput, setEmpIdInput] = useState("");
   const [empleadoEncontrado, setEmpleadoEncontrado] = useState(null);
@@ -53,6 +55,21 @@ function Solicitar_certificacion() {
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
   const [usuarioEmpId, setUsuarioEmpId] = useState("");
   const [usuarioNombre, setUsuarioNombre] = useState("");
+
+  // Líder de calidad no puede enviar solicitudes: redirigir si intenta acceder
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const storedUser = window.localStorage.getItem("user");
+      if (storedUser) {
+        const data = JSON.parse(storedUser);
+        if (data?.role === "lider_calidad") {
+          router.replace("/dashboard");
+          return;
+        }
+      }
+    } catch (_) {}
+  }, [router]);
 
   // Obtener emp_id del usuario loggeado y consultar nombre (NOMBRE + APELLIDO1)
   useEffect(() => {

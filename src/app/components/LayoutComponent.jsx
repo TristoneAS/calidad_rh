@@ -54,6 +54,7 @@ const colors = {
     drawer: "#FFFFFF",
     appBar: "linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #FDBA74 100%)",
   },
+  error: "#EF4444",
 };
 
 const drawerWidth = 280;
@@ -70,12 +71,17 @@ const App = ({ children }) => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [userRole, setUserRole] = useState(null);
 
-  // Permisos: "Admin" | "Calidad" | "RH" (extraído de data.groups[0].cn o role)
+  // Permisos: "Admin" | "Calidad" | "RH" | "Supervisor" (extraído de data.groups[0].cn o role)
+  const [isLiderCalidad, setIsLiderCalidad] = useState(false);
   const isAdmin = userRole === "Admin";
   const isCalidad = userRole === "Calidad";
   const isRH = userRole === "RH";
-  const showCalidad = isAdmin || isCalidad;
+  const isSupervisor = userRole === "Supervisor";
+  const showCalidad = isAdmin || isCalidad || isSupervisor;
   const showRH = isAdmin || isRH;
+  // Líder de calidad: NO puede enviar solicitudes. Calidad/Supervisor externo: NO puede gestionar auditoría.
+  const puedeEnviarSolicitudes = isAdmin || !isLiderCalidad;
+  const puedeGestionarAuditoria = isAdmin || isLiderCalidad; // Admin y líder de calidad sí; Calidad/Supervisor externo no.
 
   const handleToggleSidebar = () => setOpen(!open);
   const handleChange = (panel) => (event, isExpanded) => {
@@ -110,7 +116,9 @@ const App = ({ children }) => {
         return;
       }
       const data = JSON.parse(storedUser);
-      const validRoles = ["Admin", "Calidad", "RH"];
+      const validRoles = ["Admin", "Calidad", "RH", "Supervisor"];
+
+      setIsLiderCalidad(data?.role === "lider_calidad");
 
       // 1) Intentar desde data.data.groups[0].cn (última palabra)
       const cn = data?.data?.groups?.[0]?.cn;
@@ -514,61 +522,65 @@ const App = ({ children }) => {
               </AccordionSummary>
               <AccordionDetails sx={{ pt: 0, pb: 1 }}>
                 <List disablePadding>
-                  <ListItemButton
-                    onClick={() => {
-                      router.push("/dashboard/calidad/solicitar_certificacion");
-                      handleMenuItemClick();
-                    }}
-                    sx={{
-                      borderRadius: 1.5,
-                      "&:hover": {
-                        bgcolor: alpha(colors.primary.main, 0.08),
-                      },
-                    }}
-                  >
-                    <PersonAddIcon
+                  {puedeEnviarSolicitudes && (
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/calidad/solicitar_certificacion");
+                        handleMenuItemClick();
+                      }}
                       sx={{
-                        mr: isSmallScreen ? 1 : 1.5,
-                        fontSize: isSmallScreen ? 16 : 20,
-                        color: colors.primary.dark,
+                        borderRadius: 1.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.primary.main, 0.08),
+                        },
                       }}
-                    />
-                    <ListItemText
-                      primary="Solicitar Certificación"
-                      primaryTypographyProps={{
-                        fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                        fontWeight: 500,
+                    >
+                      <PersonAddIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.primary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Solicitar Certificación"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  )}
+                  {puedeGestionarAuditoria && (
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/calidad/gestionar_examenes");
+                        handleMenuItemClick();
                       }}
-                    />
-                  </ListItemButton>
-                  <ListItemButton
-                    onClick={() => {
-                      router.push("/dashboard/calidad/gestionar_examenes");
-                      handleMenuItemClick();
-                    }}
-                    sx={{
-                      borderRadius: 1.5,
-                      mt: 0.5,
-                      "&:hover": {
-                        bgcolor: alpha(colors.primary.main, 0.08),
-                      },
-                    }}
-                  >
-                    <AssessmentIcon
                       sx={{
-                        mr: isSmallScreen ? 1 : 1.5,
-                        fontSize: isSmallScreen ? 16 : 20,
-                        color: colors.primary.dark,
+                        borderRadius: 1.5,
+                        mt: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.primary.main, 0.08),
+                        },
                       }}
-                    />
-                    <ListItemText
-                      primary="Gestionar Auditoría de Producto"
-                      primaryTypographyProps={{
-                        fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
-                        fontWeight: 500,
-                      }}
-                    />
-                  </ListItemButton>
+                    >
+                      <AssessmentIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.primary.dark,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Gestionar Auditoría de Producto"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  )}
                 </List>
               </AccordionDetails>
             </Accordion>
@@ -856,6 +868,34 @@ const App = ({ children }) => {
                       />
                       <ListItemText
                         primary="Cargar (Excel/CSV)"
+                        primaryTypographyProps={{
+                          fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
+                          fontWeight: 500,
+                        }}
+                      />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={() => {
+                        router.push("/dashboard/empleados/cargar_bajas");
+                        handleMenuItemClick();
+                      }}
+                      sx={{
+                        borderRadius: 1.5,
+                        mb: 0.5,
+                        "&:hover": {
+                          bgcolor: alpha(colors.secondary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <RemoveCircleOutlineIcon
+                        sx={{
+                          mr: isSmallScreen ? 1 : 1.5,
+                          fontSize: isSmallScreen ? 16 : 20,
+                          color: colors.error,
+                        }}
+                      />
+                      <ListItemText
+                        primary="Bajas (Excel/CSV)"
                         primaryTypographyProps={{
                           fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
                           fontWeight: 500,

@@ -27,11 +27,13 @@ import {
   Button,
 } from "@mui/material";
 import axios from "axios";
+import * as XLSX from "xlsx";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import EventBusyIcon from "@mui/icons-material/EventBusy";
 import HistoryIcon from "@mui/icons-material/History";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import DownloadIcon from "@mui/icons-material/Download";
 
 const colors = {
   primary: { main: "#3B82F6", light: "#60A5FA", dark: "#2563EB" },
@@ -69,6 +71,18 @@ function Certificaciones_vigencia() {
     yaEnviada: false,
   });
   const [idsConSolicitudPendiente, setIdsConSolicitudPendiente] = useState(new Set());
+  const [isLiderCalidad, setIsLiderCalidad] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const storedUser = window.localStorage.getItem("user");
+      if (storedUser) {
+        const data = JSON.parse(storedUser);
+        setIsLiderCalidad(data?.role === "lider_calidad");
+      }
+    } catch (_) {}
+  }, []);
 
   const fetchDatos = async () => {
     try {
@@ -143,6 +157,7 @@ function Certificaciones_vigencia() {
   };
 
   const abrirRenovar = (cert) => {
+    if (isLiderCalidad) return;
     const yaEnviada = tieneSolicitudPendiente(cert.emp_id, cert.id_proceso);
     setRenovarDialog({ open: true, certificacion: cert, loading: false, yaEnviada });
   };
@@ -205,6 +220,45 @@ function Certificaciones_vigencia() {
     }
   };
 
+  const descargarExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    const headersPorVencer = ["Empleado", "ID Empleado", "Proceso", "Vence el", "Días restantes", "Con solicitud pendiente"];
+    const datosPorVencer = porVencer.map((c) => {
+      const empId = c.emp_id ?? c.empId;
+      const idProceso = c.id_proceso ?? c.idProceso;
+      return [
+        c.emp_nombre ?? "",
+        empId ?? "",
+        c.nombre_proceso ?? "",
+        formatearFecha(c.fecha_vencimiento),
+        c.dias_restantes ?? "-",
+        tieneSolicitudPendiente(empId, idProceso) ? "Sí" : "No",
+      ];
+    });
+    const wsPorVencer = XLSX.utils.aoa_to_sheet([headersPorVencer, ...datosPorVencer]);
+    XLSX.utils.book_append_sheet(wb, wsPorVencer, "Por vencer");
+
+    const headersVencidas = ["Empleado", "ID Empleado", "Proceso", "Venció el", "Días vencido", "Con solicitud pendiente"];
+    const datosVencidas = vencidas.map((c) => {
+      const empId = c.emp_id ?? c.empId;
+      const idProceso = c.id_proceso ?? c.idProceso;
+      return [
+        c.emp_nombre ?? "",
+        empId ?? "",
+        c.nombre_proceso ?? "",
+        formatearFecha(c.fecha_vencimiento),
+        c.dias_vencido ?? "-",
+        tieneSolicitudPendiente(empId, idProceso) ? "Sí" : "No",
+      ];
+    });
+    const wsVencidas = XLSX.utils.aoa_to_sheet([headersVencidas, ...datosVencidas]);
+    XLSX.utils.book_append_sheet(wb, wsVencidas, "Vencidas");
+
+    const fecha = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `Certificaciones_vigencia_${fecha}.xlsx`);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
@@ -223,10 +277,18 @@ function Certificaciones_vigencia() {
               Certificaciones - Vigencia y Renovación
             </Typography>
             <Button
+              startIcon={<DownloadIcon />}
+              onClick={descargarExcel}
+              size="small"
+              variant="outlined"
+              sx={{ ml: "auto" }}
+            >
+              Descargar Excel
+            </Button>
+            <Button
               startIcon={<RefreshIcon />}
               onClick={fetchDatos}
               size="small"
-              sx={{ ml: "auto" }}
             >
               Actualizar
             </Button>
@@ -361,14 +423,14 @@ function Certificaciones_vigencia() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Tooltip title={tieneSolicitud ? "Ya se mandó a renovación" : ""}>
+                          <Tooltip title={tieneSolicitud ? "Ya se mandó a renovación" : isLiderCalidad ? "El líder de calidad no puede enviar solicitudes" : ""}>
                             <span>
                               <Button
                                 size="small"
                                 variant="contained"
                                 startIcon={<AddCircleOutlineIcon />}
                                 onClick={() => abrirRenovar(c)}
-                                disabled={tieneSolicitud}
+                                disabled={tieneSolicitud || isLiderCalidad}
                                 sx={{ mr: 1 }}
                               >
                                 Renovar

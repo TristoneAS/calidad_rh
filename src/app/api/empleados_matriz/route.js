@@ -11,7 +11,7 @@ export async function GET(request) {
 
     if (empId) {
       const [rows] = await conn.execute(
-        "SELECT NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2, FECHA_NACIMIENTO, SEXO, FECHA_ANTIGUEDAD, CATEGORIA, ID_JEFE, NOMBRE_JEFE FROM empleados WHERE NUM_EMPLEADO = ?",
+        "SELECT NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2, FECHA_NACIMIENTO, SEXO, FECHA_ANTIGUEDAD, CATEGORIA, ID_JEFE, NOMBRE_JEFE, activo FROM empleados WHERE NUM_EMPLEADO = ? AND activo = 1",
         [empId]
       );
       if (rows.length === 0) {
@@ -25,7 +25,7 @@ export async function GET(request) {
     }
 
     const [rows] = await conn.execute(
-      "SELECT NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2, FECHA_NACIMIENTO, SEXO, FECHA_ANTIGUEDAD, CATEGORIA, ID_JEFE, NOMBRE_JEFE FROM empleados ORDER BY NOMBRE ASC"
+      "SELECT NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2, FECHA_NACIMIENTO, SEXO, FECHA_ANTIGUEDAD, CATEGORIA, ID_JEFE, NOMBRE_JEFE, activo FROM empleados WHERE activo = 1 ORDER BY NOMBRE ASC"
     );
     const data = rows.map((emp) => ({
       ...emp,

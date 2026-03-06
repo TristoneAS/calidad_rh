@@ -104,7 +104,7 @@ export async function POST(request) {
                 `UPDATE empleados SET
                   NOMBRE = ?, APELLIDO1 = ?, APELLIDO2 = ?,
                   FECHA_NACIMIENTO = ?, SEXO = ?, FECHA_ALTA = ?, FECHA_ANTIGUEDAD = ?,
-                  CATEGORIA = ?, ID_JEFE = ?, NOMBRE_JEFE = ?
+                  CATEGORIA = ?, ID_JEFE = ?, NOMBRE_JEFE = ?, activo = 1
                   WHERE NUM_EMPLEADO = ?`,
                 [
                   datos.NOMBRE,
@@ -125,7 +125,7 @@ export async function POST(request) {
                 `UPDATE empleados SET
                   NOMBRE = ?, APELLIDO1 = ?, APELLIDO2 = ?,
                   FECHA_NACIMIENTO = ?, SEXO = ?, FECHA_ANTIGUEDAD = ?,
-                  CATEGORIA = ?, ID_JEFE = ?, NOMBRE_JEFE = ?
+                  CATEGORIA = ?, ID_JEFE = ?, NOMBRE_JEFE = ?, activo = 1
                   WHERE NUM_EMPLEADO = ?`,
                 [
                   datos.NOMBRE,
@@ -148,8 +148,8 @@ export async function POST(request) {
                 `INSERT INTO empleados (
                   NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2,
                   FECHA_NACIMIENTO, SEXO, FECHA_ALTA, FECHA_ANTIGUEDAD,
-                  CATEGORIA, ID_JEFE, NOMBRE_JEFE
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  CATEGORIA, ID_JEFE, NOMBRE_JEFE, activo
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
                 colsConFechaAlta
               );
             } else {
@@ -157,8 +157,8 @@ export async function POST(request) {
                 `INSERT INTO empleados (
                   NUM_EMPLEADO, NOMBRE, APELLIDO1, APELLIDO2,
                   FECHA_NACIMIENTO, SEXO, FECHA_ANTIGUEDAD,
-                  CATEGORIA, ID_JEFE, NOMBRE_JEFE
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  CATEGORIA, ID_JEFE, NOMBRE_JEFE, activo
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
                 colsSinFechaAlta
               );
             }

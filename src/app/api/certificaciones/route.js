@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
 import { conn } from "@/libs/mysql";
 
+// Filtra registros dejando solo aquellos cuyo emp_id está activo en tabla empleados
+async function filtrarPorEmpleadosActivos(conn, rows) {
+  if (!rows || rows.length === 0) return rows;
+  const empIds = [...new Set(rows.map((r) => String(r.emp_id ?? "").trim()).filter(Boolean))];
+  if (empIds.length === 0) return rows;
+  try {
+    const placeholders = empIds.map(() => "?").join(", ");
+    const [activos] = await conn.execute(
+      `SELECT NUM_EMPLEADO FROM empleados WHERE NUM_EMPLEADO IN (${placeholders}) AND activo = 1`,
+      empIds
+    );
+    const setActivos = new Set(activos.map((a) => String(a.NUM_EMPLEADO ?? "").trim()));
+    return rows.filter((r) => setActivos.has(String(r.emp_id ?? "").trim()));
+  } catch (err) {
+    return rows;
+  }
+}
+
 // GET - Certificaciones vigentes, por vencer, vencidas, historial o verificar vigente
 export async function GET(request) {
   try {
@@ -36,7 +54,7 @@ export async function GET(request) {
       return NextResponse.json({ success: true, data: keys });
     }
 
-    // Listar certificaciones por vencer (próximos 30 días)
+    // Listar certificaciones por vencer (próximos 30 días) - excluir empleados dados de baja
     if (tipo === "por_vencer") {
       const [rows] = await conn.execute(
         `SELECT ep.*, 
@@ -47,10 +65,11 @@ export async function GET(request) {
          AND ep.fecha_vencimiento <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
          ORDER BY ep.fecha_vencimiento ASC`
       );
-      return NextResponse.json({ success: true, data: rows });
+      const filtrados = await filtrarPorEmpleadosActivos(conn, rows);
+      return NextResponse.json({ success: true, data: filtrados });
     }
 
-    // Listar certificaciones vencidas (incluye las que vencen hoy)
+    // Listar certificaciones vencidas (incluye las que vencen hoy) - excluir empleados dados de baja
     if (tipo === "vencidas") {
       const [rows] = await conn.execute(
         `SELECT ep.*, DATEDIFF(CURDATE(), ep.fecha_vencimiento) as dias_vencido
@@ -59,7 +78,8 @@ export async function GET(request) {
          AND ep.fecha_vencimiento <= CURDATE()
          ORDER BY ep.fecha_vencimiento DESC`
       );
-      return NextResponse.json({ success: true, data: rows });
+      const filtrados = await filtrarPorEmpleadosActivos(conn, rows);
+      return NextResponse.json({ success: true, data: filtrados });
     }
 
     // Historial de certificaciones (por emp_id y/o id_proceso)

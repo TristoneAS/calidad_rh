@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Card,
@@ -52,6 +53,7 @@ function TabPanel({ children, value, index }) {
 }
 
 function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
+  const router = useRouter();
   const [tabValue, setTabValue] = useState(initialTab);
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,10 +73,35 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
     loading: false,
   });
   const [filtroEmpId, setFiltroEmpId] = useState("");
+  const [filtroSolicitadoPor, setFiltroSolicitadoPor] = useState("");
 
   useEffect(() => {
     fetchSolicitudes();
   }, []);
+
+  // Calidad/Supervisor externo no puede gestionar auditoría: redirigir si accede a gestionar_examenes
+  useEffect(() => {
+    if (modo !== "calidad-examenes" || typeof window === "undefined") return;
+    try {
+      const storedUser = window.localStorage.getItem("user");
+      if (storedUser) {
+        const data = JSON.parse(storedUser);
+        const esLiderCalidad = data?.role === "lider_calidad";
+        if (esLiderCalidad) return; // Líder sí puede
+        const cn = data?.data?.groups?.[0]?.cn;
+        const validRoles = ["Admin", "Calidad", "RH", "Supervisor"];
+        let userRole = null;
+        if (cn && typeof cn === "string") {
+          const parts = cn.trim().split(/[\s._-]+/).filter(Boolean);
+          const lastWord = parts.length ? parts[parts.length - 1] : "";
+          if (validRoles.includes(lastWord)) userRole = lastWord;
+        }
+        if (userRole === "Calidad" || userRole === "Supervisor") {
+          router.replace("/dashboard");
+        }
+      }
+    } catch (_) {}
+  }, [modo, router]);
 
   // Obtener emp_id, nombre completo (NOMBRE + APELLIDO1) y rol del usuario loggeado
   useEffect(() => {
@@ -197,18 +224,28 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
     ].includes(st);
   });
 
-  // Aplicar filtro por emp_id a las listas
-  const filtrarPorEmpId = (lista) => {
-    if (!filtroEmpId.trim()) return lista;
-    const termino = String(filtroEmpId).trim().toLowerCase();
-    return lista.filter(
-      (s) =>
-        String(s.emp_id || "").toLowerCase().includes(termino)
-    );
+  // Aplicar filtros por emp_id y solicitado_por a las listas
+  const aplicarFiltros = (lista) => {
+    let resultado = lista;
+    if (filtroEmpId.trim()) {
+      const termino = String(filtroEmpId).trim().toLowerCase();
+      resultado = resultado.filter(
+        (s) => String(s.emp_id || "").toLowerCase().includes(termino)
+      );
+    }
+    if (filtroSolicitadoPor.trim()) {
+      const termino = String(filtroSolicitadoPor).trim().toLowerCase();
+      resultado = resultado.filter(
+        (s) => String(s.solicitado_por || "").toLowerCase().includes(termino)
+      );
+    }
+    return resultado;
   };
-  const pendientesFiltrados = filtrarPorEmpId(solicitudesPendientes);
-  const enProgresoFiltrados = filtrarPorEmpId(solicitudesEnProgreso);
-  const finalizadasFiltradas = filtrarPorEmpId(solicitudesFinalizadas);
+  const pendientesFiltrados = aplicarFiltros(solicitudesPendientes);
+  const enProgresoFiltrados = aplicarFiltros(solicitudesEnProgreso);
+  const finalizadasFiltradas = aplicarFiltros(solicitudesFinalizadas);
+
+  const hayFiltros = filtroEmpId.trim() || filtroSolicitadoPor.trim();
 
   const actualizarEstadoSolicitud = async (id, nuevoStatus) => {
     try {
@@ -760,9 +797,18 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
               sx={{ minWidth: 220 }}
               inputProps={{ "aria-label": "Filtrar por ID de empleado" }}
             />
-            {filtroEmpId.trim() && (
+            <TextField
+              label="Filtrar por solicitado por"
+              placeholder="Ej: Juan Pérez"
+              value={filtroSolicitadoPor}
+              onChange={(e) => setFiltroSolicitadoPor(e.target.value)}
+              size="small"
+              sx={{ minWidth: 220 }}
+              inputProps={{ "aria-label": "Filtrar por quien solicitó" }}
+            />
+            {hayFiltros && (
               <Typography variant="body2" color="text.secondary">
-                Mostrando registros que coinciden con &quot;{filtroEmpId.trim()}&quot;
+                Aplicando filtros activos
               </Typography>
             )}
           </Box>
@@ -792,17 +838,17 @@ function Consultar_solicitudes({ modo = "full", initialTab = 0 }) {
               <Tab
                 icon={<PendingIcon sx={{ mb: 0.5 }} />}
                 iconPosition="start"
-                label={`Pendientes (${pendientesFiltrados.length}${filtroEmpId.trim() ? `/${solicitudesPendientes.length}` : ""})`}
+                label={`Pendientes (${pendientesFiltrados.length}${hayFiltros ? `/${solicitudesPendientes.length}` : ""})`}
               />
               <Tab
                 icon={<HourglassEmptyIcon sx={{ mb: 0.5 }} />}
                 iconPosition="start"
-                label={`En Progreso (${enProgresoFiltrados.length}${filtroEmpId.trim() ? `/${solicitudesEnProgreso.length}` : ""})`}
+                label={`En Progreso (${enProgresoFiltrados.length}${hayFiltros ? `/${solicitudesEnProgreso.length}` : ""})`}
               />
               <Tab
                 icon={<CheckCircleIcon sx={{ mb: 0.5 }} />}
                 iconPosition="start"
-                label={`Finalizadas (${finalizadasFiltradas.length}${filtroEmpId.trim() ? `/${solicitudesFinalizadas.length}` : ""})`}
+                label={`Finalizadas (${finalizadasFiltradas.length}${hayFiltros ? `/${solicitudesFinalizadas.length}` : ""})`}
               />
             </Tabs>
           </Box>
