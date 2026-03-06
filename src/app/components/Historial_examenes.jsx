@@ -32,7 +32,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
 import DownloadIcon from "@mui/icons-material/Download";
-import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType } from "docx";
+import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, Header, Footer, PageNumber } from "docx";
 import { saveAs } from "file-saver";
 
 const colors = {
@@ -196,16 +196,42 @@ function Historial_examenes() {
     } catch (_) {
       // Si falla la carga del logo, continuar sin él
     }
-    const children = [
-      ...(logoImageRun
+
+    // Header: logo en todas las páginas
+    const headerChildren = logoImageRun
+      ? [
+          new Paragraph({
+            children: [logoImageRun],
+            alignment: AlignmentType.RIGHT,
+          }),
+        ]
+      : [new Paragraph("")];
+
+    // Footer: descripción del examen + paginación "Página X/Y" en todas las páginas
+    const footerChildren = [
+      ...(descripcionExamen && String(descripcionExamen).trim()
         ? [
             new Paragraph({
-              children: [logoImageRun],
-              alignment: AlignmentType.RIGHT,
-              spacing: { after: 400 },
+              children: [
+                new TextRun({ text: String(descripcionExamen).trim(), size: 20 }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 200 },
             }),
           ]
         : []),
+      new Paragraph({
+        children: [
+          new TextRun({
+            children: ["Página ", PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES],
+            size: 20,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+      }),
+    ];
+
+    const children = [
       new Paragraph({
         children: [
           new TextRun({
@@ -274,24 +300,20 @@ function Historial_examenes() {
         })
       );
     });
-    if (descripcionExamen && String(descripcionExamen).trim()) {
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: String(descripcionExamen).trim(),
-            }),
-          ],
-          alignment: AlignmentType.RIGHT,
-          spacing: { before: 600, after: 200 },
-        })
-      );
-    }
+
     const doc = new Document({
-      sections: [{
-        properties: {},
-        children,
-      }],
+      sections: [
+        {
+          headers: {
+            default: new Header({ children: headerChildren }),
+          },
+          footers: {
+            default: new Footer({ children: footerChildren }),
+          },
+          properties: {},
+          children,
+        },
+      ],
     });
     const blob = await Packer.toBlob(doc);
     const nombreArchivo = `Certificacion_${(empNombre || "empleado").replace(/\s+/g, "_").slice(0, 30)}_${(nombreExamen || "examen").replace(/\s+/g, "_").slice(0, 20)}.docx`;
