@@ -60,18 +60,20 @@ export async function POST(request) {
       }
     }
 
-    // Insertar todos los enrolamientos (con soporte para certificaciones y vencimiento)
+    // Insertar todos los enrolamientos (con soporte para certificaciones, vencimiento y fecha opcional)
     const insertPromises = enrolamientos.map((enrolamiento) => {
       const esCert = enrolamiento.es_certificacion ? 1 : 0;
       const fechaVenc = enrolamiento.fecha_vencimiento || null;
+      const fechaEnrol = enrolamiento.fecha || null; // Fecha del archivo masivo (YYYY-MM-DD)
       return conn.execute(
-        "INSERT INTO empleados_procesos (emp_id, emp_nombre, id_proceso, nombre_proceso, descripcion_proceso, fecha, enrolado_por, es_certificacion, fecha_vencimiento) VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, ?)",
+        "INSERT INTO empleados_procesos (emp_id, emp_nombre, id_proceso, nombre_proceso, descripcion_proceso, fecha, enrolado_por, es_certificacion, fecha_vencimiento) VALUES (?, ?, ?, ?, ?, COALESCE(?, CURDATE()), ?, ?, ?)",
         [
           enrolamiento.emp_id,
           enrolamiento.emp_nombre,
           enrolamiento.id_proceso,
           enrolamiento.nombre_proceso,
           enrolamiento.descripcion_proceso || "",
+          fechaEnrol,
           enrolamiento.enrolado_por || "Alex",
           esCert,
           fechaVenc,

@@ -19,6 +19,7 @@ import {
   alpha,
   useMediaQuery,
   useTheme,
+  Badge,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 
@@ -37,6 +38,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 
 // Colores profesionales basados en el logo
 const colors = {
@@ -82,6 +84,12 @@ const App = ({ children }) => {
   // Líder de calidad: NO puede enviar solicitudes. Calidad/Supervisor externo: NO puede gestionar auditoría.
   const puedeEnviarSolicitudes = isAdmin || !isLiderCalidad;
   const puedeGestionarAuditoria = isAdmin || isLiderCalidad; // Admin y líder de calidad sí; Calidad/Supervisor externo no.
+
+  const [pendientesCounts, setPendientesCounts] = useState({
+    pendiente: 0,
+    entrenamiento_aprobado: 0,
+    examen_aprobado: 0,
+  });
 
   const handleToggleSidebar = () => setOpen(!open);
   const handleChange = (panel) => (event, isExpanded) => {
@@ -145,6 +153,28 @@ const App = ({ children }) => {
       console.error("Error leyendo permisos desde localStorage:", err);
       setUserRole(null);
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchPendientes = async () => {
+      try {
+        const res = await fetch("/api/solicitudes_certificacion?counts=pendientes");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setPendientesCounts(json.data);
+          }
+        }
+      } catch (_) {}
+    };
+    fetchPendientes();
+    const interval = setInterval(fetchPendientes, 60000);
+    const onFocus = () => fetchPendientes();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -519,6 +549,15 @@ const App = ({ children }) => {
                 >
                   Solicitudes a entrenamiento
                 </Typography>
+                {puedeGestionarAuditoria && pendientesCounts.entrenamiento_aprobado > 0 && (
+                  <Badge
+                    badgeContent={pendientesCounts.entrenamiento_aprobado}
+                    color="error"
+                    sx={{ ml: 1 }}
+                  >
+                    <NotificationsIcon sx={{ fontSize: 20, color: colors.primary.dark }} />
+                  </Badge>
+                )}
               </AccordionSummary>
               <AccordionDetails sx={{ pt: 0, pb: 1 }}>
                 <List disablePadding>
@@ -579,6 +618,15 @@ const App = ({ children }) => {
                           fontWeight: 500,
                         }}
                       />
+                      {pendientesCounts.entrenamiento_aprobado > 0 && (
+                        <Badge
+                          badgeContent={pendientesCounts.entrenamiento_aprobado}
+                          color="error"
+                          sx={{ ml: 1 }}
+                        >
+                          <NotificationsIcon sx={{ fontSize: 20, color: colors.primary.dark }} />
+                        </Badge>
+                      )}
                     </ListItemButton>
                   )}
                 </List>
@@ -1106,6 +1154,15 @@ const App = ({ children }) => {
                   >
                     Procesos
                   </Typography>
+                  {(pendientesCounts.pendiente > 0 || pendientesCounts.examen_aprobado > 0) && (
+                    <Badge
+                      badgeContent={pendientesCounts.pendiente + pendientesCounts.examen_aprobado}
+                      color="error"
+                      sx={{ ml: 1 }}
+                    >
+                      <NotificationsIcon sx={{ fontSize: 20, color: colors.secondary.dark }} />
+                    </Badge>
+                  )}
                 </AccordionSummary>
                 <AccordionDetails sx={{ pt: 0, pb: 1 }}>
                   <List disablePadding>
@@ -1193,6 +1250,15 @@ const App = ({ children }) => {
                           fontWeight: 500,
                         }}
                       />
+                      {pendientesCounts.pendiente > 0 && (
+                        <Badge
+                          badgeContent={pendientesCounts.pendiente}
+                          color="error"
+                          sx={{ ml: 1 }}
+                        >
+                          <NotificationsIcon sx={{ fontSize: 20, color: colors.secondary.dark }} />
+                        </Badge>
+                      )}
                     </ListItemButton>
                     <ListItemButton
                       onClick={() => {
@@ -1223,6 +1289,15 @@ const App = ({ children }) => {
                           fontWeight: 500,
                         }}
                       />
+                      {pendientesCounts.examen_aprobado > 0 && (
+                        <Badge
+                          badgeContent={pendientesCounts.examen_aprobado}
+                          color="error"
+                          sx={{ ml: 1 }}
+                        >
+                          <NotificationsIcon sx={{ fontSize: 20, color: colors.secondary.dark }} />
+                        </Badge>
+                      )}
                     </ListItemButton>
                     <ListItemButton
                       onClick={() => {

@@ -47,6 +47,27 @@ export async function GET(request) {
       });
     }
 
+    // Obtener conteos de solicitudes pendientes de acción (para notificaciones)
+    if (searchParams.get("counts") === "pendientes") {
+      const [pendiente] = await conn.execute(
+        "SELECT COUNT(*) as total FROM solicitudes_certificacion WHERE status = 'pendiente'"
+      );
+      const [entrenamientoAprobado] = await conn.execute(
+        "SELECT COUNT(*) as total FROM solicitudes_certificacion WHERE status = 'entrenamiento_aprobado'"
+      );
+      const [examenAprobado] = await conn.execute(
+        "SELECT COUNT(*) as total FROM solicitudes_certificacion WHERE status = 'examen_aprobado'"
+      );
+      return NextResponse.json({
+        success: true,
+        data: {
+          pendiente: pendiente[0]?.total ?? 0,
+          entrenamiento_aprobado: entrenamientoAprobado[0]?.total ?? 0,
+          examen_aprobado: examenAprobado[0]?.total ?? 0,
+        },
+      });
+    }
+
     // Obtener todas las solicitudes (opcionalmente filtradas por status)
     let query =
       "SELECT * FROM solicitudes_certificacion ORDER BY fecha_solicitud DESC";

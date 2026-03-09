@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -22,6 +22,8 @@ import {
   Divider,
   TextField,
   Button,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import axios from "axios";
 import PersonIcon from "@mui/icons-material/Person";
@@ -29,6 +31,8 @@ import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import SearchIcon from "@mui/icons-material/Search";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import * as XLSX from "xlsx";
 
 // Colores profesionales
 const colors = {
@@ -57,6 +61,10 @@ function Enrolar_proceso() {
   const [loadingProcesos, setLoadingProcesos] = useState(true);
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
   const [enroladoPor, setEnroladoPor] = useState(""); // emp_nombre del usuario de sesión
+  const [masivo, setMasivo] = useState(false);
+  const [empleadosMasivos, setEmpleadosMasivos] = useState([]); // { emp_id, emp_nombre, fecha }
+  const [loadingMasivo, setLoadingMasivo] = useState(false);
+  const fileInputRefMasivo = useRef(null);
 
   // Cargar procesos y usuario de sesión al montar
   useEffect(() => {
@@ -162,6 +170,148 @@ function Enrolar_proceso() {
       setProcesoSeleccionado("");
       setProcesosSeleccionados([]);
       setEmpleadosSeleccionados([]);
+      setMasivo(false);
+      setEmpleadosMasivos([]);
+    }
+  };
+
+  const normalizarFechaExcel = (val) => {
+    if (val == null || val === "" || val === undefined) return null;
+    if (typeof val === "number") {
+      const fecha = new Date((val - 25569) * 86400 * 1000);
+      return fecha.toISOString().slice(0, 10);
+    }
+    const str = String(val).trim();
+    const match = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (match) {
+      let day, month;
+      const a = parseInt(match[1], 10);
+      const b = parseInt(match[2], 10);
+      const year = parseInt(match[3], 10);
+      if (a > 12) {
+        day = a;
+        month = b;
+      } else if (b > 12) {
+        month = a;
+        day = b;
+      } else {
+        month = a;
+        day = b;
+      }
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        const d = new Date(year, month - 1, day);
+        if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+      }
+    }
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  };
+
+  const handleFileMasivo = async (e) => {
+    const file = e.target?.files?.[0];
+    if (!file || !procesoSeleccionado) return;
+    const ext = (file.name || "").toLowerCase();
+    if (!ext.endsWith(".xlsx") && !ext.endsWith(".xls") && !ext.endsWith(".csv")) {
+      showAlert("Formato no válido. Use Excel (.xlsx, .xls) o CSV (.csv)", "error");
+      return;
+    }
+    setLoadingMasivo(true);
+    setEmpleadosMasivos([]);
+    try {
+      const data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            let wb;
+            if (ext.endsWith(".csv")) {
+              const text = typeof ev.target?.result === "string" ? ev.target.result : new TextDecoder().decode(ev.target?.result);
+              wb = XLSX.read(text, { type: "string", raw: false });
+            } else {
+              wb = XLSX.read(ev.target?.result, { type: "array", raw: false });
+            }
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+            resolve(json);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = () => reject(new Error("Error al leer el archivo"));
+        ext.endsWith(".csv") ? reader.readAsText(file) : reader.readAsArrayBuffer(file);
+      });
+
+      const filas = (Array.isArray(data) ? data : []).slice(1).filter((row) => row && (row[0] != null && String(row[0]).trim() !== ""));
+      const proceso = procesos.find((p) => p.id.toString() === procesoSeleccionado);
+      if (!proceso) {
+        showAlert("Proceso no encontrado", "error");
+        return;
+      }
+
+      const resultados = [];
+      const noEncontrados = []; // { emp_id, fecha_original }
+      for (const row of filas) {
+        const empId = String(row[0] ?? "").trim();
+        const fechaStr = normalizarFechaExcel(row[1]);
+        const fechaOriginal = row[1] != null ? String(row[1]).trim() : "";
+        if (!empId) continue;
+        try {
+          const res = await axios.get(`/api/empleados?emp_id=${encodeURIComponent(empId)}`);
+          if (res.data.success && res.data.data) {
+            const emp = res.data.data;
+            const empNombre = emp.NOMBRE || emp.nombre || emp.emp_nombre || "Sin nombre";
+            resultados.push({
+              emp_id: empId,
+              emp_nombre: empNombre,
+              fecha: fechaStr || new Date().toISOString().slice(0, 10),
+            });
+          } else {
+            noEncontrados.push({ emp_id: empId, fecha_original: fechaOriginal });
+          }
+        } catch (_) {
+          try {
+            const res2 = await axios.get(`/api/empleados_matriz?emp_id=${encodeURIComponent(empId)}`);
+            if (res2.data.success && res2.data.data) {
+              const emp = res2.data.data;
+              const empNombre = emp.NOMBRE || emp.nombre || emp.emp_nombre || "Sin nombre";
+              resultados.push({
+                emp_id: empId,
+                emp_nombre: empNombre,
+                fecha: fechaStr || new Date().toISOString().slice(0, 10),
+              });
+            } else {
+              noEncontrados.push({ emp_id: empId, fecha_original: fechaOriginal });
+            }
+          } catch (_) {
+            noEncontrados.push({ emp_id: empId, fecha_original: fechaOriginal });
+          }
+        }
+      }
+      setEmpleadosMasivos(resultados);
+      if (noEncontrados.length > 0) {
+        const wb = XLSX.utils.book_new();
+        const wsData = [
+          ["NUM_EMPLEADO", "FECHA"],
+          ...noEncontrados.map((n) => [n.emp_id, n.fecha_original]),
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, "No encontrados");
+        const fecha = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `Empleados_no_encontrados_${fecha}.xlsx`);
+      }
+      if (resultados.length > 0) {
+        showAlert(
+          `${resultados.length} empleado(s) cargados.${noEncontrados.length > 0 ? ` ${noEncontrados.length} no encontrados (descarga automática).` : ""}`,
+          noEncontrados.length > 0 ? "warning" : "success"
+        );
+      } else {
+        showAlert(noEncontrados.length > 0 ? "Ningún empleado del archivo fue encontrado (lista descargada)" : "El archivo no tiene filas válidas", "error");
+      }
+    } catch (err) {
+      showAlert(err.message || "Error al procesar el archivo", "error");
+    } finally {
+      setLoadingMasivo(false);
+      e.target.value = "";
     }
   };
 
@@ -350,14 +500,18 @@ function Enrolar_proceso() {
         };
       });
     } else {
-      // Modo: Proceso -> Empleados
+      // Modo: Proceso -> Empleados (manual o masivo)
       if (!procesoSeleccionado) {
         showAlert("Por favor selecciona un proceso", "error");
         return;
       }
 
-      if (empleadosSeleccionados.length === 0) {
-        showAlert("Por favor agrega al menos un empleado", "error");
+      const listaEmpleados = masivo ? empleadosMasivos : empleadosSeleccionados;
+      if (listaEmpleados.length === 0) {
+        showAlert(
+          masivo ? "Por favor carga un archivo Excel con empleados" : "Por favor agrega al menos un empleado",
+          "error"
+        );
         return;
       }
 
@@ -371,23 +525,29 @@ function Enrolar_proceso() {
       }
 
       // Verificar una última vez antes de guardar
+      const getEmpId = (emp) =>
+        masivo ? emp.emp_id : (emp.NUM_EMPLEADO || emp.num_empleado || emp.emp_id || emp.id);
       const verificaciones = await Promise.all(
-        empleadosSeleccionados.map((emp) =>
+        listaEmpleados.map((emp) =>
           verificarEnrolamientoExistente(
-            (emp.NUM_EMPLEADO || emp.num_empleado || emp.emp_id || emp.id).toString(),
+            String(getEmpId(emp)),
             proceso.id.toString()
           )
         )
       );
 
-      const empleadosDuplicados = empleadosSeleccionados.filter(
+      const empleadosDuplicados = listaEmpleados.filter(
         (emp, index) => verificaciones[index]
       );
 
       if (empleadosDuplicados.length > 0) {
         showAlert(
           `No se pueden crear enrolamientos duplicados. Ya existen enrolamientos para: ${empleadosDuplicados
-            .map((e) => e.NOMBRE || e.nombre || e.emp_nombre || e.NUM_EMPLEADO || e.num_empleado || e.emp_id || e.id)
+            .map((e) =>
+              masivo
+                ? e.emp_id
+                : (e.NOMBRE || e.nombre || e.emp_nombre || e.NUM_EMPLEADO || e.num_empleado || e.emp_id || e.id)
+            )
             .join(", ")}`,
           "error"
         );
@@ -397,21 +557,43 @@ function Enrolar_proceso() {
       const esCertificable =
         proceso.certificable &&
         proceso.certificable.toString().toLowerCase() === "si";
-      const vencimiento = esCertificable ? new Date() : null;
-      if (vencimiento) vencimiento.setMonth(vencimiento.getMonth() + 6);
 
-      enrolamientos = empleadosSeleccionados.map((emp) => ({
-        emp_id: emp.NUM_EMPLEADO || emp.num_empleado || emp.emp_id || emp.id,
-        emp_nombre: emp.NOMBRE || emp.nombre || emp.emp_nombre || "Sin nombre",
-        id_proceso: proceso.id,
-        nombre_proceso: proceso.nombre,
-        descripcion_proceso: proceso.descripcion || "",
-        enrolado_por: enroladoPor || "Sistema",
-        es_certificacion: esCertificable,
-        fecha_vencimiento: esCertificable
-          ? vencimiento.toISOString().split("T")[0]
-          : null,
-      }));
+      if (masivo) {
+        enrolamientos = empleadosMasivos.map((emp) => {
+          const fechaBase = emp.fecha ? new Date(emp.fecha) : new Date();
+          if (isNaN(fechaBase.getTime())) fechaBase.setTime(Date.now());
+          const vencimiento = new Date(fechaBase);
+          vencimiento.setMonth(vencimiento.getMonth() + 6);
+          return {
+            emp_id: emp.emp_id,
+            emp_nombre: emp.emp_nombre,
+            id_proceso: proceso.id,
+            nombre_proceso: proceso.nombre,
+            descripcion_proceso: proceso.descripcion || "",
+            enrolado_por: enroladoPor || "Sistema",
+            es_certificacion: esCertificable,
+            fecha: emp.fecha || fechaBase.toISOString().slice(0, 10),
+            fecha_vencimiento: esCertificable
+              ? vencimiento.toISOString().split("T")[0]
+              : null,
+          };
+        });
+      } else {
+        const vencimiento = esCertificable ? new Date() : null;
+        if (vencimiento) vencimiento.setMonth(vencimiento.getMonth() + 6);
+        enrolamientos = empleadosSeleccionados.map((emp) => ({
+          emp_id: emp.NUM_EMPLEADO || emp.num_empleado || emp.emp_id || emp.id,
+          emp_nombre: emp.NOMBRE || emp.nombre || emp.emp_nombre || "Sin nombre",
+          id_proceso: proceso.id,
+          nombre_proceso: proceso.nombre,
+          descripcion_proceso: proceso.descripcion || "",
+          enrolado_por: enroladoPor || "Sistema",
+          es_certificacion: esCertificable,
+          fecha_vencimiento: esCertificable
+            ? vencimiento.toISOString().split("T")[0]
+            : null,
+        }));
+      }
     }
 
     try {
@@ -450,6 +632,7 @@ function Enrolar_proceso() {
         setProcesoSeleccionado("");
         setProcesosSeleccionados([]);
         setEmpleadosSeleccionados([]);
+        setEmpleadosMasivos([]);
       } else {
         showAlert(
           response.data.error || "Error al crear los enrolamientos",
@@ -714,6 +897,85 @@ function Enrolar_proceso() {
 
               {procesoSeleccionado && (
                 <>
+                  <Box sx={{ mb: 2, mt: 3, display: "flex", alignItems: "center" }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={masivo}
+                          onChange={(e) => {
+                            setMasivo(e.target.checked);
+                            if (!e.target.checked) setEmpleadosMasivos([]);
+                          }}
+                          color="primary"
+                        />
+                      }
+                      label="Masivo"
+                    />
+                  </Box>
+
+                  {masivo ? (
+                    <>
+                      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                        Paso 2: Carga archivo Excel (col. 1 = Nº empleado, col. 2 = Fecha)
+                      </Typography>
+                      <Box display="flex" gap={2} mb={2} alignItems="center" flexWrap="wrap">
+                        <input
+                          ref={fileInputRefMasivo}
+                          type="file"
+                          accept=".xlsx,.xls,.csv"
+                          onChange={handleFileMasivo}
+                          style={{ display: "none" }}
+                        />
+                        <Button
+                          variant="contained"
+                          startIcon={loadingMasivo ? <CircularProgress size={20} /> : <UploadFileIcon />}
+                          onClick={() => fileInputRefMasivo.current?.click()}
+                          disabled={loadingMasivo}
+                          sx={{
+                            bgcolor: colors.primary.main,
+                            "&:hover": { bgcolor: colors.primary.dark },
+                          }}
+                        >
+                          {loadingMasivo ? "Cargando..." : "Seleccionar Excel"}
+                        </Button>
+                        <Typography variant="body2" color="text.secondary">
+                          Primera columna: número de empleado. Segunda: fecha (se suma 6 meses para vencimiento).
+                        </Typography>
+                      </Box>
+                      {empleadosMasivos.length > 0 && (
+                        <Paper sx={{ p: 2, mb: 3 }}>
+                          <Typography variant="subtitle1" gutterBottom>
+                            Empleados desde archivo ({empleadosMasivos.length}):
+                          </Typography>
+                          <List sx={{ maxHeight: 200, overflow: "auto" }}>
+                            {empleadosMasivos.slice(0, 30).map((emp, idx) => {
+                              const venc = emp.fecha
+                                ? (() => {
+                                    const d = new Date(emp.fecha);
+                                    d.setMonth(d.getMonth() + 6);
+                                    return d.toISOString().slice(0, 10);
+                                  })()
+                                : "N/A";
+                              return (
+                                <ListItem key={idx} dense>
+                                  <ListItemText
+                                    primary={emp.emp_nombre}
+                                    secondary={`ID: ${emp.emp_id} | Fecha: ${emp.fecha || "N/A"} | Venc: ${venc}`}
+                                  />
+                                </ListItem>
+                              );
+                            })}
+                            {empleadosMasivos.length > 30 && (
+                              <ListItem>
+                                <ListItemText secondary={`... y ${empleadosMasivos.length - 30} más`} />
+                              </ListItem>
+                            )}
+                          </List>
+                        </Paper>
+                      )}
+                    </>
+                  ) : (
+                    <>
                   <Typography variant="h6" gutterBottom sx={{ mb: 2, mt: 3 }}>
                     Paso 2: Busca y Agrega Empleados
                   </Typography>
@@ -821,6 +1083,8 @@ function Enrolar_proceso() {
                         })}
                       </List>
                     </Paper>
+                  )}
+                    </>
                   )}
                 </>
               )}
