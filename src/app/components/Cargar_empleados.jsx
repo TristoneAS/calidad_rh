@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import DownloadIcon from "@mui/icons-material/Download";
 import * as XLSX from "xlsx";
 import axios from "axios";
 
@@ -221,6 +222,20 @@ function Cargar_empleados() {
               onChange={handleFileChange}
               style={{ display: "none" }}
             />
+            <Button
+              variant="outlined"
+              component="a"
+              href="/Formato empleados.xlsx"
+              download="Formato empleados.xlsx"
+              startIcon={<DownloadIcon />}
+              sx={{
+                borderColor: colors.primary.main,
+                color: colors.primary.main,
+                "&:hover": { borderColor: colors.primary.dark, color: colors.primary.dark },
+              }}
+            >
+              Descargar formato
+            </Button>
             <Button
               variant="contained"
               startIcon={<UploadFileIcon />}

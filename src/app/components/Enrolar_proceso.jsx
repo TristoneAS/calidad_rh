@@ -32,6 +32,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import SearchIcon from "@mui/icons-material/Search";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import DownloadIcon from "@mui/icons-material/Download";
 import * as XLSX from "xlsx";
 
 // Colores profesionales
@@ -926,6 +927,20 @@ function Enrolar_proceso() {
                           onChange={handleFileMasivo}
                           style={{ display: "none" }}
                         />
+                        <Button
+                          variant="outlined"
+                          component="a"
+                          href="/Formato Procesos Masivo.xlsx"
+                          download="Formato Procesos Masivo.xlsx"
+                          startIcon={<DownloadIcon />}
+                          sx={{
+                            borderColor: colors.primary.main,
+                            color: colors.primary.main,
+                            "&:hover": { borderColor: colors.primary.dark, color: colors.primary.dark },
+                          }}
+                        >
+                          Descargar formato
+                        </Button>
                         <Button
                           variant="contained"
                           startIcon={loadingMasivo ? <CircularProgress size={20} /> : <UploadFileIcon />}
